@@ -1,0 +1,25 @@
+{
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": true,
+    "**/.antigravity/plans/archive/**": false
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.git/objects/**": true
+  },
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "antigravity.sandbox.enabled": true,
+  "antigravity.permissions.promptOnDestructiveActions": true,
+  "antigravity.rules.enforcement": "strict",
+  "antigravity.plans.activeDirectory": ".antigravity/plans/active",
+  "antigravity.plans.archiveDirectory": ".antigravity/plans/archive"
+}
