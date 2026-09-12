@@ -1,21 +1,22 @@
 ---
 id: PLAN-002
 title: "Scaffold Core ECS and Node/Processor Network using bevy_ecs"
-status: complete
+status: completed
 author: "Antigravity"
 created: 2026-09-12
 updated: 2026-09-12
+completed_at: 2026-09-12
 branch: "main"
 ---
 
 # PLAN-002: Scaffold Core ECS and Node/Processor Network using bevy_ecs
 
-> **Status:** `complete` | **Created:** 2026-09-12 | **Last Updated:** 2026-09-12
+> **Status:** `completed` | **Created:** 2026-09-12 | **Last Updated:** 2026-09-12 | **Completed:** 2026-09-12
 > **Author:** Antigravity | **Branch:** main
 
 ---
 
-## ðŸŽ¯ 1. Intent & Boundaries
+## 🎯 1. Intent & Boundaries
 
 ### 1.1 Problem Statement
 We need to establish the foundational "Micro" scale of the simulation: the Node/Processor network. Because entities in our simulation are heterogeneous (e.g., surface facilities vs. orbital facilities) and can dynamically gain or lose traits (e.g., relocating), a rigid custom `Vec` approach is insufficient. We will implement this Tier 0 domain logic using `bevy_ecs` to power the simulation tick loop, upon which orbital mechanics (Macro) and planetary surfaces (Meso) will eventually run.
