@@ -1,0 +1,15 @@
+[package]
+name = "synthetic-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Tier 0 pure domain simulation engine and deterministic calculation pipelines"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[lints]
+workspace = true
