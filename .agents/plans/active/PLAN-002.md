@@ -1,4 +1,4 @@
-﻿---
+---
 id: PLAN-002
 title: "Scaffold Core ECS and Node/Processor Network using bevy_ecs"
 status: complete
@@ -107,7 +107,7 @@ pub fn tick_simulation_world(world: &mut World) -> Result<(), DomainError> {
 
 ---
 
-## ðŸ› ï¸ 3. Implementation Steps
+## 🛠️ 3. Implementation Steps
 
 - [x] **Step 1: ECS Integration & Data Contracts**
   - [x] Add `bevy_ecs` to `crates/synthetic-core/Cargo.toml`.
@@ -130,7 +130,7 @@ pub fn tick_simulation_world(world: &mut World) -> Result<(), DomainError> {
 
 ---
 
-## ðŸ§ª 4. Verification & Criteria
+## 🧪 4. Verification & Criteria
 
 ### 4.1 Measurable Benchmarks & Targets
 - 100% unit test pass rate for the new `network` module.
@@ -141,6 +141,7 @@ pub fn tick_simulation_world(world: &mut World) -> Result<(), DomainError> {
 | Module / File | Test File | Key Scenarios Covered |
 | :--- | :--- | :--- |
 | `src/network.rs` | inline tests | Zero-sum conservation, system ordering constraints, dynamic component addition. |
+| `tests/network_regression.rs` | integration suite | 100-tick mass conservation, exact latency queues, pro-rata contention remainder handling, Phase 3 transit arrival before Phase 4 converter, backpressure throttling. |
 
 ### 4.3 Verification Commands
 ```bash
@@ -150,13 +151,16 @@ cargo test --workspace
 
 ---
 
-## ðŸ“ 5. Deviations & Retrospective (Post-Implementation)
+## 📝 5. Deviations & Retrospective (Post-Implementation)
 
 ### 5.1 Architectural Deviations
-- *[None logged during drafting.]*
+- **Transient Component Storage:** Used `#[component(storage = "SparseSet")]` for `Relocating` to prevent archetype table moving and avoid cache fragmentation for long-lived nodes.
+- **DTO Separation for Bevy Entities:** Bevy ECS `Entity` ids are mapped into u64 index identifiers in serialization DTOs (`SimulationStateDto`), maintaining a clear boundary across the Tauri IPC interface.
 
 ### 5.2 Lessons Learned & Follow-Up Tasks
-- *[None logged during drafting.]*
+- The Two-Pass Cycle mapped cleanly into ordered Bevy `Schedule` stages with `.chain()`.
+- Pro-rata allocation requires explicit remainder distribution to avoid 1-micro-unit truncation leaks across competing consumer edges.
+- Hermetic integration test proved absolute mass conservation over 100 continuous ticks with simultaneous transit latency and converter synthesis.
 
 
 
