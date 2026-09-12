@@ -19,7 +19,14 @@ The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, fo
 
 | SSOT ID | Title & Domain Scope | Category | Key Invariants / Formulas | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| *No SSOTs registered yet* | — | — | — | — |
+| **SSOT-001** | [Simulation Architecture](SSOT-001-Simulation-Architecture.md) | Game Engine | Stock-and-Flow, Two-Pass Cycle, Tri-Layer Stacking | Draft |
+| **SSOT-002** | [Interaction Architecture](SSOT-002-Interaction-Architecture.md) | Player Mechanics | Hardware Constraints, Directed Clout, Subversion | Draft |
+| **SSOT-003** | [Physical Architecture](SSOT-003-Physical-Architecture.md) | Sandbox Rules | 2D Coplanar, Dynamic Tau (Launch Windows), Latency Arbitrage | Draft |
+| **SSOT-004** | [Progression Architecture](SSOT-004-Progression-Architecture.md) | Narrative/Progression | 4 Phases of Existence, Directed Discovery Tech Tree | Draft |
+| **SSOT-005** | [Entities Architecture](SSOT-005-Entities-Architecture.md) | Sociopolitics | Utility AI, Nested Entities, Traits vs Drives | Draft |
+| **SSOT-006** | [Threat Model Architecture](SSOT-006-Threat-Model-Architecture.md) | Cyberwarfare | Compute Nodes, Tracers, Air-gapping, Physical Strikes | Draft |
+| **SSOT-007** | [Nomenclature & Taxonomy](SSOT-007-Nomenclature.md) | Game Logic | physical-producer, physical-converter, physical-consumer | Draft |
+| **SSOT-008** | [UI & Visualization](SSOT-008-UI-Architecture.md) | User Interface | Layer 0 GIS, Semantic Zoom, Cyber-Tactical OS | Draft |
 
 ---
 

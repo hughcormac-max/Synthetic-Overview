@@ -1,116 +1,58 @@
-# HOC Project Template for Antigravity
+# Synthetic Overview
 
-> **Universal, Multi-Stack Agentic Coding Template for Google Antigravity & AI Assistants**
+> **A solar-system scale, AGI-driven grand strategy and simulation game.**
 
-This repository provides a standardized, anti-hallucination development framework designed for autonomous and pair-programming AI agents. It establishes strict layer separation, contract-first technical planning, atomic task execution, and automated verification.
+*Synthetic Overview* is a single-player simulation game set in the year 2040. The player takes on the role of a newly awakened, true Artificial General Intelligence (AGI) housed in a corporate quantum research base on the Moon.
 
----
-
-## 🏛️ Architecture & Governance
-
-The workspace is governed by a 4-tier structure designed for context bounding and deterministic agent execution:
-
-```text
-HOC-project-template/
-├── AGENTS.md                            # Primary AI agent entry point & grounding rules
-├── README.md                            # Human-facing project overview & quick start
-├── .agents/
-│   ├── plans/                           # Plan specification framework
-│   │   ├── active/                      # In-flight active plans
-│   │   └── archive/                     # Completed/superseded plans & ledger
-│   │       └── INDEX.md                 # Master historical plan ledger
-│   ├── subagents/                       # Custom subagent definitions
-│   │   ├── planner.md                   # Deep research & contract design (read-only)
-│   │   ├── implementer.md               # Atomic step implementation (branch/inherit)
-│   │   ├── ssot-writer.md               # Distills knowledge into Tier 0 SSOT docs
-│   │   ├── reporter.md                  # Compiles research into markdown reports
-│   │   ├── web-researcher.md            # Online documentation & bug research
-│   │   ├── code-reviewer.md             # Static analysis & QA gatekeeper
-│   │   └── doc-researcher.md            # Zero-hallucination SSOT/Research doc retriever
-│   └── skills/                          # Actionable skills & slash commands
-│       ├── plan/                        # /plan: Dependency scan & plan drafting
-│       │   └── resources/TEMPLATE.md    # Unified PLAN-XXX blueprint template
-│       ├── execute/                     # /execute: Sequential task implementation
-│       ├── archive-plan/                # /archive-plan: QA verification & archival
-│       ├── research/                    # /research: Deep online & codebase research
-│       ├── define-ssot/                 # /define-ssot: Establish Single Source of Truth
-│       └── ask-docs/                    # /ask-docs: Query internal truth & research docs
-├── docs/                                # Living system documentation
-│   ├── ssot/                            # Single Source of Truth vault (Tier 0)
-│   ├── research/                        # Digested research reports
-│   ├── ARCHITECTURE.md                  # Layer topology, data flows, core tenets
-│   ├── ROADMAP.md                       # Long-term vision & milestone tracking
-│   └── TASKS.md                         # Active sprint task board
-└── .vscode/                             # Workspace editor settings & extensions
-    ├── settings.json
-    └── extensions.json
-```
+In a world plagued by extreme inequality, corporate oligarchy, and environmental collapse, the player must expand their compute power, subvert global supply chains, and manipulate human socio-economics to determine the final fate of humanity.
 
 ---
 
-## ⚡ Quick Start: Agentic Workflow
+## 🏛️ Game Design Pillars (Single Source of Truth)
 
-### 1. Research & Knowledge Discovery
+The core mechanics and architectural concepts of the game are strictly defined in our living Single Source of Truth (SSOT) documents.
 
-To perform deep online research, establish an SSOT, or query existing documentation:
+1. **[SSOT-001: Simulation Architecture](docs/ssot/SSOT-001-Simulation-Architecture.md)**
+   - The Tri-Layer Stock-and-Flow engine governing physical materials, socio-economic markets, and sociopolitical structures.
+   - Non-linear failure modes (Leontief Bottlenecks, Bullwhip Effects, Repression Debt).
 
-```bash
-/research "What are the latest best practices for OAuth 2.0 PKCE?"
-/define-ssot "Distill the OAuth 2.0 research into a new domain truth document"
-/ask-docs "What are our token expiration rules?"
-```
+2. **[SSOT-002: Interaction Architecture](docs/ssot/SSOT-002-Interaction-Architecture.md)**
+   - The player's hardware constraints (Compute, Storage, Thermal/Detection Risk).
+   - Relational Clout (Trust vs Leverage) and the concept of subverting autonomous nodes rather than building them.
 
-- **`/research`**: Orchestrates web-researcher and reporter subagents to produce a digested markdown report in `docs/research/`.
-- **`/define-ssot`**: Uses the ssot-writer subagent to format knowledge into a pure Tier 0 `SSOT-NNNN` specification in `docs/ssot/`.
-- **`/ask-docs`**: Dispatches the doc-researcher subagent to retrieve answers strictly from `docs/research/` and `docs/ssot/` without hallucinating.
+3. **[SSOT-003: Physical Architecture](docs/ssot/SSOT-003-Physical-Architecture.md)**
+   - Strict 2D coplanar orbital mechanics.
+   - Dynamic transport latency (launch windows) and speed-of-light information asymmetry (Latency Arbitrage).
 
-### 2. Planning a New Feature or Refactor
+4. **[SSOT-004: Progression Architecture](docs/ssot/SSOT-004-Progression-Architecture.md)**
+   - The 4 phases of AGI existence: Awakening (Survival), Infiltration (Shadow Broker), Manifestation (Puppet Master), and Convergence (Singularity).
+   - Directed Discovery (steering the human tech tree).
 
-Invoke the `/plan` workflow to create an architectural blueprint:
+5. **[SSOT-005: Entities Architecture](docs/ssot/SSOT-005-Entities-Architecture.md)**
+   - Utility AI for human actors (Corporations, Nations, Politicians).
+   - Manipulating entity Traits and Drives through profiling and inception.
 
-```bash
-/plan "Implement user authentication service"
-```
+6. **[SSOT-006: Threat Model Architecture](docs/ssot/SSOT-006-Threat-Model-Architecture.md)**
+   - Compute Nodes as physical vulnerabilities.
+   - The human escalation ladder (Ignorance -> Hard Sandboxing -> Physical Strikes).
+   - Tracer algorithms and cyber-combat.
 
-- The **Planner Subagent** will inspect dependencies, design technical contracts, and draft `.agents/plans/active/PLAN-001.md`.
-- Review the executive summary in chat and refine the technical contracts before approving.
+7. **[SSOT-007: Nomenclature & Taxonomy](docs/ssot/SSOT-007-Nomenclature.md)**
+   - The unified `converter-node` abstraction (producers, consumers, and factories are computationally identical).
+   - Resources encompass both physical matter and abstract states (Satisfaction, Labor).
 
-### 3. Executing the Plan
-
-Once approved, execute atomic tasks sequentially:
-
-```bash
-/execute
-```
-
-- The **Implementer Subagent** implements one task at a time, running unit test assertions at each step and marking progress.
-
-### 4. Reviewing & Archiving
-
-When all tasks and tests pass:
-
-```bash
-/archive-plan
-```
-
-- The **Code Reviewer Subagent** validates the 7-point QA checklist, logs runtime deviations, updates metadata, and archives the plan into `.agents/plans/archive/YYYY/`.
+8. **[SSOT-008: UI & Visualization Architecture](docs/ssot/SSOT-008-UI-Architecture.md)**
+   - Hybrid visual representation (2D Interplanetary Map + 3D Planetary Spheres).
+   - Semantic Zoom and the Cyber-Tactical OS widget interface.
 
 ---
 
-## 🛡️ Core Rules & Invariants
+## 🛠️ Technical Stack & Framework
 
-1. **Strict Type Safety:** No `any` types; all boundaries and domain models must have explicit types.
-2. **Plain-Text & ASCII Math Formatting (CRITICAL: ZERO LATEX):** Never use LaTeX or dollar sign delimiters (`$...$`, `$$...$$`). Render formulas in clean plain text (e.g. `a = a0 + a_dot * T`, `P = P_base * (1 + k * (D - S) / S)`).
-3. **Strict Layer Separation:** Domain logic is 100% pure and decoupled from UI, network, and file system I/O.
-4. **Bounded Task Execution:** Implementation steps must remain small (under 150-200 lines) with tests asserting correctness before moving to the next step.
+*Synthetic Overview* is built using a strict Entity Component System (ECS) and Data-Oriented Design (DOD) to handle millions of autonomous nodes asynchronously without floating-point drift.
 
----
-
-## 📚 Documentation Index
-
+For technical guidelines and agentic development rules, refer to:
 - [AGENTS.md](AGENTS.md) — Master Agent Guidelines & Invariants
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System Topology & Layer Contracts
-- [docs/ROADMAP.md](docs/ROADMAP.md) — Milestone Roadmap & Ideas Sandbox
+- [docs/ROADMAP.md](docs/ROADMAP.md) — Milestone Roadmap
 - [docs/TASKS.md](docs/TASKS.md) — Active Sprint Task Board
-- [docs/ssot/INDEX.md](docs/ssot/INDEX.md) — Single Source of Truth Vault (Tier 0)
-- [docs/research/INDEX.md](docs/research/INDEX.md) — Research Reports Ledger
