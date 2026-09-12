@@ -1,28 +1,21 @@
 # Project Roadmap & Vision
 
 > **Document:** `docs/ROADMAP.md`
-> **Status:** Living Master Roadmap | **Active Tasks:** [docs/TASKS.md](file:///docs/TASKS.md)
+> **Status:** Living Master Roadmap | **Active Tasks:** [TASKS.md](TASKS.md)
 
 ---
 
 ## 🎯 1. Vision & Core Objectives
 
-This roadmap outlines the long-term vision, scheduled milestone phases, and backlog ideas for the project. Tasks from this roadmap are decomposed into formal [PLAN-XXX](file:///.antigravity/plans/TEMPLATE.md) specifications and tracked daily on the active [TASKS.md](file:///docs/TASKS.md) board.
+This roadmap outlines the long-term vision, scheduled milestone phases, and backlog ideas for the project. Tasks from this roadmap are decomposed into formal [PLAN-XXX](../.agents/skills/plan/resources/TEMPLATE.md) specifications and tracked daily on the active [TASKS.md](TASKS.md) board.
 
 ---
 
 ## 🗺️ 2. Milestone Phases
 
-```
-+------------------+     +------------------+     +------------------+     +------------------+
-| Phase 1:         | --> | Phase 2:         | --> | Phase 3:         | --> | Phase 4:         |
-| Foundation       |     | Core Logic       |     | Integration & UI |     | Polish & Release |
-+------------------+     +------------------+     +------------------+     +------------------+
-```
-
 ### 🧱 Phase 1: Foundation & Environment Scaffold
 
-- [x] **Antigravity Framework Setup:** Scaffolding `.antigravity/` rules, subagents, workflows, and plans.
+- [x] **Agent Framework Setup:** Scaffolding `.agents/` subagents, skills, and plans.
 - [x] **Documentation System Grounding:** Initialized `AGENTS.md` and `docs/` framework.
 - [ ] **Stack Initialization:** Configure package manifests, linters, typecheckers, and test runners for target tech stack.
 - [ ] **Base CI/CD Pipelines:** Automated linting, typechecking, and unit test validation workflows.

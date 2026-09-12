@@ -1,7 +1,7 @@
 # Active Task Board & Sprint Tracker
 
 > **Document:** `docs/TASKS.md`
-> **Master Reference:** [AGENTS.md](file:///AGENTS.md) | **Roadmap:** [docs/ROADMAP.md](file:///docs/ROADMAP.md) | **Architecture:** [docs/ARCHITECTURE.md](file:///docs/ARCHITECTURE.md)
+> **Master Reference:** [AGENTS.md](../AGENTS.md) | **Roadmap:** [ROADMAP.md](ROADMAP.md) | **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Plan ID | Title | Status | Author | Target Branch | Active Path |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| *No active plans currently in flight* | — | — | — | — | `.antigravity/plans/active/` |
+| *No active plans currently in flight* | — | — | — | — | `.agents/plans/active/` |
 
 ---
 
 ## ✅ 3. Recently Completed Milestones
 
-- [x] **Framework Scaffolding:** Initialized `.antigravity/` rules, subagents, workflows, and plan templates.
-- [x] **Core Documentation Grounding:** Established root [AGENTS.md](file:///AGENTS.md) and [docs/](file:///docs/) structure (`ARCHITECTURE.md`, `ROADMAP.md`, `TASKS.md`).
+- [x] **Framework Scaffolding:** Initialized `.agents/` rules, subagents, skills, and plan templates.
+- [x] **Core Documentation Grounding:** Established root [AGENTS.md](../AGENTS.md) and [docs/](./) structure (`ARCHITECTURE.md`, `ROADMAP.md`, `TASKS.md`).
 - [x] **Workspace Configuration:** Generated `.vscode/` settings and extension recommendations.
 
 ---

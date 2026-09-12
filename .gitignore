@@ -90,7 +90,8 @@ $RECYCLE.BIN/
 *.sublime-project
 *.sublime-workspace
 
-# Antigravity Scratch & Temp Directory
+# Antigravity & Agent Scratch & Temp Directory
+.agents/scratch/
 .antigravity/scratch/
 brain/
 scratch/

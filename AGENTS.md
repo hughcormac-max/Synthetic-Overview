@@ -22,17 +22,22 @@ This document establishes the repository guidelines, architectural boundaries, c
      - Write `eps = v^2 / 2 - mu / r`
      - Render units as clean text: `250 km`, `1.5e11 m`, `m/s`, `AU`, `deg/cy`.
 
-3. **Strict Layer Separation & Downward Knowledge Grounding:**
+3. **Strict Layer Separation & Pure Function Pipelines:**
    - Decouple Domain / Core Logic, Application / Services, Infrastructure / I/O, and Presentation / UI.
-   - Core domain models and computational pipelines must have **zero external I/O or UI dependencies**. See [.antigravity/rules/00-core-architecture.md](file:///.antigravity/rules/00-core-architecture.md).
-   - **Downward Reference Rule:** `docs/references/REF-XXX.md` acts as Tier 0 immutable domain truth (formulas, constants, logic loops, anti-hallucination traps). Plans and source code cite downward to references; references must NEVER contain upward references to codebase file paths.
+   - Core domain models and calculation pipelines must have **zero external I/O or UI dependencies**. State transformations and calculation pipelines must be pure, deterministic functions without side effects.
+   - **Downward Reference Rule:** `docs/ssot/SSOT-NNNN.md` acts as Tier 0 immutable domain truth (formulas, constants, logic loops, anti-hallucination traps). Plans and source code cite downward to references; references must NEVER contain upward references to codebase file paths.
 
-4. **Anti-Hallucination & Bounded Context Protocol:**
+4. **Code Quality & Immutability Standards:**
+   - **Immutability by Default:** Prefer immutable data structures (`readonly`, `const`). Transform data by creating new state instances rather than mutating in place.
+   - **Explicit Error Handling:** Use explicit domain error or result types. Never write empty catch blocks or silently swallow errors. Fail fast with input validation at boundary layers.
+   - **Focused Units:** Adhere to the Single Responsibility Principle. Keep individual functions small (aim for under 40 lines) and files under 250-300 lines.
+
+5. **Anti-Hallucination & Bounded Context Protocol:**
    - **Contract-First:** Never write implementation code until public interfaces, data types, and function signatures are specified in an approved plan.
    - **Atomic Task Sizing:** Keep individual implementation steps small (under 150-200 lines of code changes per step).
    - **Step-by-Step Assertion:** Run and pass unit tests for Step N before proceeding to Step N+1.
 
-5. **Dependency Discipline:**
+6. **Dependency Discipline:**
    - Unauthorized third-party packages and external dependencies are strictly prohibited without prior architectural approval.
 
 ---
@@ -50,25 +55,12 @@ This document establishes the repository guidelines, architectural boundaries, c
 
 All significant features, refactors, and bug fixes follow the **Plan Specification Framework**:
 
-```
-+------------------+     +-------------------+     +--------------------+
-|  1. /plan        | --> |  2. Review Gate   | --> |  3. /execute       |
-|  Draft PLAN-XXX  |     |  Human Approval   |     |  Sequential Steps  |
-+------------------+     +-------------------+     +--------------------+
-                                                             |
-                                                             v
-                                                   +--------------------+
-                                                   |  4. /archive-plan  |
-                                                   |  QA Gate & Ledger  |
-                                                   +--------------------+
-```
+1. **`/plan`**: Inspect dependencies, define technical contracts, and draft `PLAN-XXX.md`.
+2. **Review Gate**: Developer audits and explicitly approves the plan.
+3. **`/execute`**: Implement atomic steps sequentially with tests asserted at each step.
+4. **`/archive-plan`**: Pass 7-point QA verification and archive to the permanent ledger.
 
-### Specialized Subagent Delegation
-
-- **Planner Subagent ([.antigravity/agents/planner.md](file:///.antigravity/agents/planner.md)):** Performs read-only research, dependency analysis, and drafts `PLAN-XXX.md`.
-- **Knowledge Grounder Subagent ([.antigravity/agents/knowledge-grounder.md](file:///.antigravity/agents/knowledge-grounder.md)):** Distills literature and domain truth into pure Tier 0 `REF-XXX` specifications.
-- **Implementer Subagent ([.antigravity/agents/implementer.md](file:///.antigravity/agents/implementer.md)):** Executes atomic checklist items sequentially in an isolated workspace branch, testing at each step.
-- **Code Reviewer Subagent ([.antigravity/agents/code-reviewer.md](file:///.antigravity/agents/code-reviewer.md)):** Audits diffs for rule adherence, static analysis, edge-case coverage, and executes the 7-point QA verification gate.
+Specific subagent delegations, workflows, and tools are defined within each individual skill under [`.agents/skills/`](.agents/skills/) and subagent specs under [`.agents/subagents/`](.agents/subagents/).
 
 ---
 
@@ -76,14 +68,14 @@ All significant features, refactors, and bug fixes follow the **Plan Specificati
 
 | Path | Purpose | Key References |
 | :--- | :--- | :--- |
-| `.antigravity/rules/` | Persistent workspace constraints | [00-core-architecture.md](file:///.antigravity/rules/00-core-architecture.md), [01-coding-standards.md](file:///.antigravity/rules/01-coding-standards.md), [02-verification.md](file:///.antigravity/rules/02-verification.md) |
-| `.antigravity/plans/` | Plan specification framework | [TEMPLATE.md](file:///.antigravity/plans/TEMPLATE.md), [active/](file:///.antigravity/plans/active/), [archive/index.md](file:///.antigravity/plans/archive/index.md) |
-| `.antigravity/agents/` | Custom subagent definitions | [planner.md](file:///.antigravity/agents/planner.md), [knowledge-grounder.md](file:///.antigravity/agents/knowledge-grounder.md), [implementer.md](file:///.antigravity/agents/implementer.md), [code-reviewer.md](file:///.antigravity/agents/code-reviewer.md) |
-| `.antigravity/workflows/` | Slash-command playbooks | [plan.md](file:///.antigravity/workflows/plan.md), [execute.md](file:///.antigravity/workflows/execute.md), [archive-plan.md](file:///.antigravity/workflows/archive-plan.md) |
-| `docs/references/` | Domain knowledge & truth vault | [INDEX.md](file:///docs/references/INDEX.md), [TEMPLATE.md](file:///docs/references/TEMPLATE.md) |
-| `docs/` | Living system documentation | [ARCHITECTURE.md](file:///docs/ARCHITECTURE.md), [ROADMAP.md](file:///docs/ROADMAP.md), [TASKS.md](file:///docs/TASKS.md) |
-| `scripts/` | Standards verification scripts | [audit-standards.ps1](file:///scripts/audit-standards.ps1) |
-| `.vscode/` | Workspace editor & sandbox configuration | [settings.json](file:///.vscode/settings.json), [extensions.json](file:///.vscode/extensions.json) |
+| `AGENTS.md` | Master agent grounding & non-negotiable invariants | [AGENTS.md](AGENTS.md) |
+| `.agents/plans/` | Plan specification framework | [active/](.agents/plans/active/), [archive/INDEX.md](.agents/plans/archive/INDEX.md) |
+| `.agents/subagents/` | Custom subagent definitions | [planner.md](.agents/subagents/planner.md), [ssot-writer.md](.agents/subagents/ssot-writer.md), [implementer.md](.agents/subagents/implementer.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [web-researcher.md](.agents/subagents/web-researcher.md), [reporter.md](.agents/subagents/reporter.md), [doc-researcher.md](.agents/subagents/doc-researcher.md) |
+| `.agents/skills/` | Actionable skills & slash commands | [plan](.agents/skills/plan/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
+| `docs/ssot/` | Domain knowledge & truth vault | [INDEX.md](docs/ssot/INDEX.md) |
+| `docs/research/` | Digested research reports vault | [INDEX.md](docs/research/INDEX.md) |
+| `docs/` | Living system documentation | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [ROADMAP.md](docs/ROADMAP.md), [TASKS.md](docs/TASKS.md) |
+| `.vscode/` | Workspace editor & sandbox configuration | [settings.json](.vscode/settings.json), [extensions.json](.vscode/extensions.json) |
 
 ---
 
@@ -91,9 +83,9 @@ All significant features, refactors, and bug fixes follow the **Plan Specificati
 
 *Configure the active commands below to match the initialized project stack:*
 
-| Check | Command | Purpose |
+| Check | Command / Mechanism | Purpose |
 | :--- | :--- | :--- |
-| **Standards Audit** | `powershell -ExecutionPolicy Bypass -File ./scripts/audit-standards.ps1` | Verify Zero-LaTeX & Downward Reference integrity |
+| **Standards Audit** | Agentic Review (`code-reviewer` / native ripgrep) | Verify Zero-LaTeX & Downward Reference integrity |
 | **Typecheck** | `npm run typecheck` / `mypy .` / `cargo check` | Verify strict type safety |
 | **Lint** | `npm run lint` / `ruff check .` / `cargo clippy` | Verify code quality & style |
 | **Unit Tests** | `npm test` / `pytest` / `cargo test` | Verify hermetic unit test pass rate |
