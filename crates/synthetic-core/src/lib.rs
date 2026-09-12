@@ -1,4 +1,4 @@
-﻿//! Tier 0 Domain Layer: Pure Rust simulation engine and Keplerian orbital mechanics.
+//! Tier 0 Domain Layer: Pure Rust simulation engine and Keplerian orbital mechanics.
 //!
 //! Architectural Invariants:
 //! 1. Zero external I/O or UI dependencies.
@@ -9,6 +9,7 @@ pub mod error;
 pub mod network;
 pub mod orbital;
 pub mod simulation;
+pub mod spatial;
 
 pub use error::DomainError;
 pub use network::{
@@ -21,6 +22,7 @@ pub use orbital::{
     propagate_orbit, true_anomaly_to_eccentric_anomaly, OrbitalState,
 };
 pub use simulation::{build_simulation_world_from_dto, create_default_simulation_state, step_simulation, SimulationSession, SimulationStateDto};
+pub use spatial::{AstroNode, SurfaceNode};
 
 #[cfg(test)]
 mod tests {

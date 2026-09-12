@@ -67,16 +67,16 @@ pub struct SurfaceNode {
 
 ## 🛠️ 3. Implementation Steps
 
-- [ ] **Step 1: Dependency Integration**
-  - [ ] Add `h3o` crate as a dependency in `crates/synthetic-core/Cargo.toml`.
-- [ ] **Step 2: Spatial Components Definitions**
-  - [ ] Create `crates/synthetic-core/src/spatial/mod.rs` and `components.rs`.
-  - [ ] Implement `AstroNode` and `SurfaceNode` components.
-- [ ] **Step 3: State Initialization Tests**
-  - [ ] Write hermetic unit tests in `crates/synthetic-core/src/spatial/components.rs` or `tests/` verifying entity attachment to H3 cells.
-  - [ ] Prove entities can be queried by their `SurfaceNode`.
-- [ ] **Step 4: Full Regression & Verification**
-  - [ ] Run `cargo check` and `cargo test` to ensure zero regressions across the workspace.
+- [x] **Step 1: Dependency Integration**
+  - [x] Add `h3o` crate as a dependency in `crates/synthetic-core/Cargo.toml`.
+- [x] **Step 2: Spatial Components Definitions**
+  - [x] Create `crates/synthetic-core/src/spatial/mod.rs` and `components.rs`.
+  - [x] Implement `AstroNode` and `SurfaceNode` components.
+- [x] **Step 3: State Initialization Tests**
+  - [x] Write hermetic unit tests in `crates/synthetic-core/src/spatial/components.rs` or `tests/` verifying entity attachment to H3 cells.
+  - [x] Prove entities can be queried by their `SurfaceNode`.
+- [x] **Step 4: Full Regression & Verification**
+  - [x] Run `cargo check` and `cargo test` to ensure zero regressions across the workspace.
 
 ---
 
@@ -97,4 +97,6 @@ cargo test
 ---
 
 ## 📝 5. Deviations & Retrospective (Post-Implementation)
-- *[None logged during drafting. Update during/after implementation.]*
+- Added hermetic integration test suite `crates/synthetic-core/tests/spatial_attachment.rs` verifying entity attachment, multi-component composition with `Storage` and `Converter`, and parent-body filtering across planetary bodies.
+- All 29 unit and regression tests pass with 100% pass rate.
+- Workspace clippy passed with zero warnings (-D warnings).
