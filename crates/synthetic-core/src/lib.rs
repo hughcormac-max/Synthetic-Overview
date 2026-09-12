@@ -1,4 +1,4 @@
-//! Tier 0 Domain Layer: Pure Rust simulation engine and Keplerian orbital mechanics.
+﻿//! Tier 0 Domain Layer: Pure Rust simulation engine and Keplerian orbital mechanics.
 //!
 //! Architectural Invariants:
 //! 1. Zero external I/O or UI dependencies.
@@ -6,16 +6,21 @@
 //! 3. Plain-text and ASCII math notation only (strict Zero-LaTeX compliance).
 
 pub mod error;
+pub mod network;
 pub mod orbital;
 pub mod simulation;
 
 pub use error::DomainError;
+pub use network::{
+    Converter, CurrentTick, FlowEdge, FlowQueue, Recipe, RecipeIngredient, RecipeRegistry,
+    Relocating, ResourceAmount, SimulationTime, Storage, TransitPacket,
+};
 pub use orbital::{
     calculate_orbital_position, eccentric_anomaly_to_mean_anomaly,
     eccentric_anomaly_to_true_anomaly, mean_anomaly_to_eccentric_anomaly, normalize_angle,
     propagate_orbit, true_anomaly_to_eccentric_anomaly, OrbitalState,
 };
-pub use simulation::{create_default_simulation_state, step_simulation, SimulationStateDto};
+pub use simulation::{build_simulation_world_from_dto, create_default_simulation_state, step_simulation, SimulationSession, SimulationStateDto};
 
 #[cfg(test)]
 mod tests {
@@ -26,16 +31,16 @@ mod tests {
 
     #[test]
     fn test_orbital_state_validation_valid() {
-        let state = OrbitalState::new(1, 0, 0.0, 1.496e11, 0.0167, 31558149.0);
+        let state = OrbitalState::new(1, 0, 0.0, 1.496e11, 0.0167, 31_558_149.0);
         assert!(state.is_ok());
     }
 
     #[test]
     fn test_orbital_state_validation_invalid_eccentricity() {
-        let parabolic = OrbitalState::new(1, 0, 0.0, 1.496e11, 1.0, 31558149.0);
+        let parabolic = OrbitalState::new(1, 0, 0.0, 1.496e11, 1.0, 31_558_149.0);
         assert!(matches!(parabolic, Err(DomainError::InvalidEccentricity(_))));
 
-        let negative = OrbitalState::new(1, 0, 0.0, 1.496e11, -0.1, 31558149.0);
+        let negative = OrbitalState::new(1, 0, 0.0, 1.496e11, -0.1, 31_558_149.0);
         assert!(matches!(negative, Err(DomainError::InvalidEccentricity(_))));
     }
 
@@ -80,7 +85,7 @@ mod tests {
     #[test]
     fn test_propagation_zero_drift_full_orbit() {
         // Propagating for exactly one orbital period must return true anomaly to initial value
-        let period = 31558149.0;
+        let period = 31_558_149.0;
         let initial_state = OrbitalState::new(10, 0, 0.42, 1.496e11, 0.05, period)
             .expect("valid orbital state");
 
@@ -100,7 +105,7 @@ mod tests {
     #[test]
     fn test_propagation_half_orbit_symmetry() {
         // Starting at periapsis (nu = 0), a half period must reach apoapsis (nu = PI)
-        let period = 100000.0;
+        let period = 100_000.0;
         let periapsis = OrbitalState::new(1, 0, 0.0, 5e7, 0.1, period)
             .expect("valid orbital state");
 
@@ -124,10 +129,13 @@ mod tests {
 
         let stepped = step_simulation(&default_state, 86400.0).expect("step ok");
         assert_eq!(stepped.tick, 1);
-        assert_eq!(stepped.timestamp_seconds, 86400.0);
+        assert!((stepped.timestamp_seconds - 86_400.0).abs() < f64::EPSILON);
         assert_eq!(stepped.entities.len(), 2);
 
         // Ensure entities advanced deterministically
         assert!(stepped.entities[0].true_anomaly > default_state.entities[0].true_anomaly);
     }
 }
+
+
+

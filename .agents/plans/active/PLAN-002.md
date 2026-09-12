@@ -1,7 +1,7 @@
----
+﻿---
 id: PLAN-002
 title: "Scaffold Core ECS and Node/Processor Network using bevy_ecs"
-status: in-progress
+status: complete
 author: "Antigravity"
 created: 2026-09-12
 updated: 2026-09-12
@@ -10,12 +10,12 @@ branch: "main"
 
 # PLAN-002: Scaffold Core ECS and Node/Processor Network using bevy_ecs
 
-> **Status:** `draft` | **Created:** 2026-09-12 | **Last Updated:** 2026-09-12
+> **Status:** `complete` | **Created:** 2026-09-12 | **Last Updated:** 2026-09-12
 > **Author:** Antigravity | **Branch:** main
 
 ---
 
-## 🎯 1. Intent & Boundaries
+## ðŸŽ¯ 1. Intent & Boundaries
 
 ### 1.1 Problem Statement
 We need to establish the foundational "Micro" scale of the simulation: the Node/Processor network. Because entities in our simulation are heterogeneous (e.g., surface facilities vs. orbital facilities) and can dynamically gain or lose traits (e.g., relocating), a rigid custom `Vec` approach is insufficient. We will implement this Tier 0 domain logic using `bevy_ecs` to power the simulation tick loop, upon which orbital mechanics (Macro) and planetary surfaces (Meso) will eventually run.
@@ -34,10 +34,10 @@ We need to establish the foundational "Micro" scale of the simulation: the Node/
 
 ---
 
-## 📐 2. Technical Contracts & Interfaces
+## ðŸ“ 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-001: Simulation Architecture](../../../docs/ssot/SSOT-001-Simulation-Architecture.md) — *Stock, Edge, and Converter definitions, Two-Pass Cycle.*
+- [SSOT-001: Simulation Architecture](../../../docs/ssot/SSOT-001-Simulation-Architecture.md) â€” *Stock, Edge, and Converter definitions, Two-Pass Cycle.*
 
 ### 2.2 Domain Types & Schemas
 ```rust
@@ -107,30 +107,30 @@ pub fn tick_simulation_world(world: &mut World) -> Result<(), DomainError> {
 
 ---
 
-## 🛠️ 3. Implementation Steps
+## ðŸ› ï¸ 3. Implementation Steps
 
-- [ ] **Step 1: ECS Integration & Data Contracts**
-  - [ ] Add `bevy_ecs` to `crates/synthetic-core/Cargo.toml`.
-  - [ ] Create `network.rs` module in `synthetic-core`.
-  - [ ] Define `ResourceAmount`, `Storage`, `Converter`, and transient components with `#[derive(Component)]`.
-  - [ ] Implement robust fixed-point math wrappers for `ResourceAmount`.
-- [ ] **Step 2: Core Systems & Pipelines**
-  - [ ] Implement `initialize_simulation_world` to setup the ECS environment and resources.
-  - [ ] Implement Bevy `System`s for Phase 1 & 2: Demand Polling and Contention Resolution.
-  - [ ] Implement Bevy `System`s for Phase 3: Edge transit latency (using ECS events or queue components).
-  - [ ] Implement Bevy `System`s for Phase 4: Converter execution.
-  - [ ] Organize systems into a strict `Schedule` to guarantee the Two-Pass Cycle execution order.
-- [ ] **Step 3: Application Adapter**
-  - [ ] Refactor `step_simulation` in `simulation.rs` to execute the Bevy `World` schedule instead of iterating over `Vec<OrbitalState>`.
-  - [ ] Ensure `SimulationStateDto` can successfully extract/serialize data from the Bevy `World` to pass back to Tauri.
-- [ ] **Step 4: Full Regression & Verification**
-  - [ ] Write hermetic unit tests proving mass-energy conservation across ticks within the ECS world.
-  - [ ] Write tests confirming the execution order of systems matches SSOT-001.
-  - [ ] Execute `cargo clippy` and `cargo test`.
+- [x] **Step 1: ECS Integration & Data Contracts**
+  - [x] Add `bevy_ecs` to `crates/synthetic-core/Cargo.toml`.
+  - [x] Create `network.rs` module in `synthetic-core`.
+  - [x] Define `ResourceAmount`, `Storage`, `Converter`, and transient components with `#[derive(Component)]`.
+  - [x] Implement robust fixed-point math wrappers for `ResourceAmount`.
+- [x] **Step 2: Core Systems & Pipelines**
+  - [x] Implement `initialize_simulation_world` to setup the ECS environment and resources.
+  - [x] Implement Bevy `System`s for Phase 1 & 2: Demand Polling and Contention Resolution.
+  - [x] Implement Bevy `System`s for Phase 3: Edge transit latency (using ECS events or queue components).
+  - [x] Implement Bevy `System`s for Phase 4: Converter execution.
+  - [x] Organize systems into a strict `Schedule` to guarantee the Two-Pass Cycle execution order.
+- [x] **Step 3: Application Adapter**
+  - [x] Refactor `step_simulation` in `simulation.rs` to execute the Bevy `World` schedule instead of iterating over `Vec<OrbitalState>`.
+  - [x] Ensure `SimulationStateDto` can successfully extract/serialize data from the Bevy `World` to pass back to Tauri.
+- [x] **Step 4: Full Regression & Verification**
+  - [x] Write hermetic unit tests proving mass-energy conservation across ticks within the ECS world.
+  - [x] Write tests confirming the execution order of systems matches SSOT-001.
+  - [x] Execute `cargo clippy` and `cargo test`.
 
 ---
 
-## 🧪 4. Verification & Criteria
+## ðŸ§ª 4. Verification & Criteria
 
 ### 4.1 Measurable Benchmarks & Targets
 - 100% unit test pass rate for the new `network` module.
@@ -150,10 +150,14 @@ cargo test --workspace
 
 ---
 
-## 📝 5. Deviations & Retrospective (Post-Implementation)
+## ðŸ“ 5. Deviations & Retrospective (Post-Implementation)
 
 ### 5.1 Architectural Deviations
 - *[None logged during drafting.]*
 
 ### 5.2 Lessons Learned & Follow-Up Tasks
 - *[None logged during drafting.]*
+
+
+
+

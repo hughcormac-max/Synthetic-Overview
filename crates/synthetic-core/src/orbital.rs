@@ -1,4 +1,5 @@
 use std::f64::consts::PI;
+use bevy_ecs::prelude::Component;
 use serde::{Deserialize, Serialize};
 use crate::error::DomainError;
 
@@ -8,7 +9,7 @@ const KEPLER_CONVERGENCE_EPSILON: f64 = 1e-13;
 
 /// Core deterministic Keplerian orbital state model.
 /// Managed strictly in the Rust Tier 0 domain layer.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct OrbitalState {
     pub entity_id: u64,
     pub barycenter_id: u64,
@@ -210,4 +211,23 @@ pub fn propagate_orbit(
         eccentricity: state.eccentricity,
         orbital_period: state.orbital_period,
     })
+}
+
+
+use crate::network::{SimulationTime, TickErrorLog};
+use bevy_ecs::prelude::{Query, Res, ResMut};
+
+/// ECS system advancing all Keplerian orbital states by ``delta_time_seconds``.
+#[allow(clippy::needless_pass_by_value)]
+pub fn propagate_orbits_system(
+    sim_time: Res<SimulationTime>,
+    mut query: Query<&mut OrbitalState>,
+    mut error_log: ResMut<TickErrorLog>,
+) {
+    for mut orbital_state in &mut query {
+        match propagate_orbit(&orbital_state, sim_time.delta_time_seconds) {
+            Ok(updated) => *orbital_state = updated,
+            Err(err) => error_log.push(err),
+        }
+    }
 }
