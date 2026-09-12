@@ -22,7 +22,7 @@ Archived plans are categorized by year under `.agents/plans/archive/YYYY/PLAN-XX
 
 | Plan ID | Title | Status | Author | Created | Completed | Archive Path |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| *No archived plans yet* | — | — | — | — | — | — |
+| [PLAN-001](2026/PLAN-001.md) | Define Tech Stack, Engine, and System Architecture | `completed` | Antigravity | 2026-09-12 | 2026-09-12 | [2026/PLAN-001.md](2026/PLAN-001.md) |
 
 ---
 
