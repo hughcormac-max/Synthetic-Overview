@@ -5,13 +5,17 @@
 //! 2. Deterministic, pure calculation pipelines without side effects.
 //! 3. Plain-text and ASCII math notation only (strict Zero-LaTeX compliance).
 
+pub mod dto;
 pub mod error;
+pub mod generator;
 pub mod network;
 pub mod orbital;
 pub mod simulation;
 pub mod spatial;
 
+pub use dto::{AstroNodeDto, ConverterDto, FlowEdgeDto, ResourceDto, SimulationStateDto, StorageDto, SurfaceNodeDto};
 pub use error::DomainError;
+pub use generator::generate_economic_scenario;
 pub use network::{
     Converter, CurrentTick, FlowEdge, FlowQueue, Recipe, RecipeIngredient, RecipeRegistry,
     Relocating, ResourceAmount, SimulationTime, Storage, TransitPacket,
@@ -21,7 +25,10 @@ pub use orbital::{
     eccentric_anomaly_to_true_anomaly, mean_anomaly_to_eccentric_anomaly, normalize_angle,
     propagate_orbit, true_anomaly_to_eccentric_anomaly, OrbitalState,
 };
-pub use simulation::{build_simulation_world_from_dto, create_default_simulation_state, step_simulation, SimulationSession, SimulationStateDto};
+pub use simulation::{
+    build_simulation_world_from_dto, create_default_simulation_state, step_simulation,
+    ResourceDirectory, SimulationSession,
+};
 pub use spatial::{AstroNode, SurfaceNode};
 
 #[cfg(test)]

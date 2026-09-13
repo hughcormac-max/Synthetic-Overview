@@ -13,8 +13,13 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@deck.gl/core": "^9.4.0",
+    "@deck.gl/geo-layers": "^9.4.0",
+    "@deck.gl/layers": "^9.4.0",
+    "@deck.gl/react": "^9.4.0",
     "@tauri-apps/api": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.5",
+    "h3-js": "^4.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

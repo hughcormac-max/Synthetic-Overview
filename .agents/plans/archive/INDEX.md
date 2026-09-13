@@ -25,6 +25,7 @@ Archived plans are categorized by year under `.agents/plans/archive/YYYY/PLAN-XX
 | [PLAN-001](2026/PLAN-001.md) | Define Tech Stack, Engine, and System Architecture | `completed` | Antigravity | 2026-09-12 | 2026-09-12 | [2026/PLAN-001.md](2026/PLAN-001.md) |
 | [PLAN-002](2026/PLAN-002.md) | Scaffold Core ECS and Node/Processor Network using bevy_ecs | `completed` | Antigravity | 2026-09-12 | 2026-09-12 | [2026/PLAN-002.md](2026/PLAN-002.md) |
 | [PLAN-003](2026/PLAN-003.md) | Scaffold H3 Spatial Grid for Astronomical Bodies | `completed` | Antigravity | 2026-09-12 | 2026-09-12 | [2026/PLAN-003.md](2026/PLAN-003.md) |
+| [PLAN-004](2026/PLAN-004.md) | Scaffold Initial Economic Simulation Scenario and IPC DTOs | `completed` | Antigravity | 2026-09-13 | 2026-09-13 | [2026/PLAN-004.md](2026/PLAN-004.md) |
 
 ---
 

@@ -1,50 +1,40 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import "./App.css";
-import type { SimulationStateDto, OrbitalState } from "./types/simulation.js";
-import {
-  calculateOrbitalPosition,
-  formatOrbitalDistance,
-  formatOrbitalPeriod,
-} from "./domain/orbital.js";
+import type { SimulationStateDto } from "./types/simulation.js";
+import { MetricCards } from "./components/MetricCards.js";
+import { NetworkTables } from "./components/NetworkTables.js";
+import { SurfaceMap } from "./components/SurfaceMap.js";
 
-const DEFAULT_SIMULATION_STATE: SimulationStateDto = {
-  tick: 0,
-  timestamp_seconds: 0.0,
-  delta_time_seconds: 86400.0,
-  entities: [
-    {
-      entity_id: 1,
-      barycenter_id: 0,
-      true_anomaly: 0.0,
-      semi_major_axis: 1.49598e11,
-      eccentricity: 0.0167086,
-      orbital_period: 31558149.0,
-    },
-    {
-      entity_id: 2,
-      barycenter_id: 0,
-      true_anomaly: 0.5,
-      semi_major_axis: 2.27939e11,
-      eccentricity: 0.0934,
-      orbital_period: 59355072.0,
-    },
-  ],
-};
+import {
+  createDefaultSimulationState,
+  stepBrowserSimulation,
+} from "./domain/generator.js";
+
+const DEFAULT_SIMULATION_STATE: SimulationStateDto = createDefaultSimulationState();
 
 function hasTauriBackend(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  return (
+    typeof window !== "undefined" &&
+    ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
+  );
 }
 
 export function App() {
   const [simState, setSimState] = useState<SimulationStateDto>(DEFAULT_SIMULATION_STATE);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tps, setTps] = useState<number>(0.0);
+  const [computeLatencyMs, setComputeLatencyMs] = useState<number>(0.0);
+
+  const lastStepTimeRef = useRef<number>(0);
 
   const fetchState = useCallback(async () => {
     if (hasTauriBackend()) {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
+        const t0 = performance.now();
         const res = await invoke<SimulationStateDto>("fetch_simulation_tick");
+        setComputeLatencyMs(performance.now() - t0);
         setSimState(res);
         setErrorMessage(null);
       } catch (err) {
@@ -54,28 +44,33 @@ export function App() {
   }, []);
 
   const handleStep = useCallback(async () => {
+    const stepStart = performance.now();
+    if (lastStepTimeRef.current > 0) {
+      const deltaSec = (stepStart - lastStepTimeRef.current) / 1000.0;
+      if (deltaSec > 0) {
+        const instantTps = 1.0 / deltaSec;
+        setTps((prev) => (prev === 0 ? instantTps : prev * 0.7 + instantTps * 0.3));
+      }
+    }
+    lastStepTimeRef.current = stepStart;
+
     if (hasTauriBackend()) {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
+        const t0 = performance.now();
         const res = await invoke<SimulationStateDto>("step_simulation_tick", {
           deltaSeconds: simState.delta_time_seconds,
         });
+        setComputeLatencyMs(performance.now() - t0);
         setSimState(res);
         setErrorMessage(null);
       } catch (err) {
         setErrorMessage(String(err));
       }
     } else {
-      // Local fallback in browser development mode
-      setSimState((prev) => ({
-        ...prev,
-        tick: prev.tick + 1,
-        timestamp_seconds: prev.timestamp_seconds + prev.delta_time_seconds,
-        entities: prev.entities.map((entity) => ({
-          ...entity,
-          true_anomaly: (entity.true_anomaly + 0.05) % (2.0 * Math.PI),
-        })),
-      }));
+      // Local fallback in browser development mode with 200 nodes
+      setSimState(stepBrowserSimulation);
+      setComputeLatencyMs(performance.now() - stepStart);
     }
   }, [simState.delta_time_seconds]);
 
@@ -83,16 +78,21 @@ export function App() {
     if (hasTauriBackend()) {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
+        const t0 = performance.now();
         const res = await invoke<SimulationStateDto>("reset_simulation");
+        setComputeLatencyMs(performance.now() - t0);
         setSimState(res);
         setErrorMessage(null);
       } catch (err) {
         setErrorMessage(String(err));
       }
     } else {
-      setSimState(DEFAULT_SIMULATION_STATE);
+      setSimState(createDefaultSimulationState());
+      setComputeLatencyMs(0.0);
     }
     setIsRunning(false);
+    setTps(0.0);
+    lastStepTimeRef.current = 0;
   }, []);
 
   useEffect(() => {
@@ -100,14 +100,19 @@ export function App() {
   }, [fetchState]);
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning) {
+      setTps(0.0);
+      lastStepTimeRef.current = 0;
+      return;
+    }
     const interval = setInterval(() => {
       void handleStep();
-    }, 200);
+    }, 150);
     return () => clearInterval(interval);
   }, [isRunning, handleStep]);
 
   const elapsedDays = (simState.timestamp_seconds / 86400.0).toFixed(2);
+  const stepHours = (simState.delta_time_seconds / 3600.0).toFixed(1);
 
   return (
     <div className="app-container">
@@ -115,6 +120,15 @@ export function App() {
         <div className="system-title">
           <span>SYNTHETIC OVERVIEW</span>
           <span className="status-badge">TIER-0 ACTIVE</span>
+          <span
+            className="status-badge"
+            style={{
+              borderColor: hasTauriBackend() ? "#3fb950" : "#d29922",
+              color: hasTauriBackend() ? "#3fb950" : "#d29922",
+            }}
+          >
+            {hasTauriBackend() ? "RUST BEVY ECS" : "BROWSER PREVIEW"}
+          </span>
         </div>
         <div className="controls-row">
           <button
@@ -139,62 +153,18 @@ export function App() {
         </div>
       )}
 
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <span className="metric-label">TICK INDEX</span>
-          <span className="metric-value">{simState.tick}</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">ELAPSED TIME</span>
-          <span className="metric-value">{elapsedDays} days</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">STEP RESOLUTION</span>
-          <span className="metric-value">{(simState.delta_time_seconds / 3600.0).toFixed(1)} hrs</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">TRACKED ENTITIES</span>
-          <span className="metric-value">{simState.entities.length}</span>
-        </div>
-      </div>
+      <MetricCards
+        tick={simState.tick}
+        elapsedDays={elapsedDays}
+        stepHours={stepHours}
+        nodeCount={simState.converters.length}
+        tps={tps}
+        computeLatencyMs={computeLatencyMs}
+      />
 
-      <main className="panel-container">
-        <div className="panel-header">RADAR TELEMETRY // ORBITAL EPHEMERIS</div>
-        <div className="table-wrapper">
-          <table className="tactical-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>BARYCENTER</th>
-                <th>TRUE ANOMALY</th>
-                <th>SEMI-MAJOR AXIS</th>
-                <th>ECCENTRICITY</th>
-                <th>PERIOD</th>
-                <th>PLANAR POS (X, Y)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {simState.entities.map((entity: OrbitalState) => {
-                const pos = calculateOrbitalPosition(entity);
-                const anomalyDeg = ((entity.true_anomaly * 180.0) / Math.PI).toFixed(2);
-                return (
-                  <tr key={entity.entity_id}>
-                    <td>#{entity.entity_id}</td>
-                    <td>B-{entity.barycenter_id}</td>
-                    <td>{anomalyDeg} deg</td>
-                    <td>{formatOrbitalDistance(entity.semi_major_axis)}</td>
-                    <td>{entity.eccentricity.toFixed(4)}</td>
-                    <td>{formatOrbitalPeriod(entity.orbital_period)}</td>
-                    <td>
-                      {formatOrbitalDistance(pos.x)}, {formatOrbitalDistance(pos.y)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </main>
+      <SurfaceMap simState={simState} />
+
+      <NetworkTables simState={simState} />
     </div>
   );
 }
