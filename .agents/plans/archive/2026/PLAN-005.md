@@ -5,6 +5,7 @@ status: completed
 author: "Antigravity"
 created: 2026-09-13
 updated: 2026-09-13
+completed_at: 2026-09-13
 branch: "surface-layer-viz"
 ---
 

@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "crates/synthetic-core",
-    "src-tauri",
+    "crates/synthetic-client",
 ]
 
 [workspace.package]

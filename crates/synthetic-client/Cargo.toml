@@ -1,0 +1,14 @@
+[package]
+name = "synthetic-client"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Bevy-based presentation and UI client for Synthetic Overview"
+
+[dependencies]
+bevy = "0.15"
+synthetic-core = { path = "../synthetic-core" }
+
+[lints]
+workspace = true
