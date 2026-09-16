@@ -1,10 +1,18 @@
+mod globe;
+
 use bevy::prelude::*;
+use bevy::render::camera::ClearColorConfig;
+use globe::viewport::MainViewPanelMarker;
+use globe::GlobePlugin;
 
 const BORDER_COLOR: Color = Color::srgb(0.22, 0.24, 0.28);
 const TEXT_COLOR: Color = Color::srgb(0.85, 0.88, 0.92);
 const SIDEBAR_BG: Color = Color::srgb(0.12, 0.12, 0.14);
-const MAIN_VIEW_BG: Color = Color::srgb(0.08, 0.08, 0.10);
+const MAIN_VIEW_BG: Color = Color::NONE; // Transparent so underlying 3D globe camera shows through
 const BOTTOM_BAR_BG: Color = Color::srgb(0.14, 0.14, 0.16);
+
+#[derive(Component)]
+pub struct UiCameraMarker;
 
 fn main() {
     App::new()
@@ -15,6 +23,7 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(GlobePlugin)
         .add_systems(Startup, setup_ui)
         .run();
 }
@@ -45,6 +54,32 @@ fn spawn_sidebar(parent: &mut ChildBuilder, title: &str) {
         ))
         .with_children(|panel| {
             spawn_label(panel, title, 14.0);
+        });
+}
+
+fn spawn_main_view_panel(
+    parent: &mut ChildBuilder,
+    title: &str,
+    height_pct: f32,
+    bg: Color,
+    font_size: f32,
+) {
+    parent
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(height_pct),
+                border: UiRect::all(Val::Px(1.0)),
+                padding: UiRect::all(Val::Px(10.0)),
+                ..default()
+            },
+            BackgroundColor(bg),
+            BorderColor(BORDER_COLOR),
+            Interaction::default(),
+            MainViewPanelMarker,
+        ))
+        .with_children(|panel| {
+            spawn_label(panel, title, font_size);
         });
 }
 
@@ -82,16 +117,26 @@ fn spawn_center_column(parent: &mut ChildBuilder) {
                 flex_grow: 1.0,
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.06, 0.06, 0.08)),
+            BackgroundColor(Color::NONE),
         ))
         .with_children(|center| {
-            spawn_view_panel(center, "2: Main View", 70.0, MAIN_VIEW_BG, 16.0);
+            spawn_main_view_panel(center, "2: Main View", 70.0, MAIN_VIEW_BG, 16.0);
             spawn_view_panel(center, "3: Bottom Bar", 30.0, BOTTOM_BAR_BG, 14.0);
         });
 }
 
 fn setup_ui(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    let ui_camera = commands
+        .spawn((
+            Camera2d,
+            Camera {
+                order: 1,
+                clear_color: ClearColorConfig::None,
+                ..default()
+            },
+            UiCameraMarker,
+        ))
+        .id();
 
     commands
         .spawn((
@@ -101,7 +146,8 @@ fn setup_ui(mut commands: Commands) {
                 flex_direction: FlexDirection::Row,
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.05, 0.05, 0.06)),
+            TargetCamera(ui_camera),
+            BackgroundColor(Color::NONE),
         ))
         .with_children(|root| {
             spawn_sidebar(root, "1: Left Sidebar");

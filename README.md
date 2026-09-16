@@ -12,38 +12,16 @@ In a world plagued by extreme inequality, corporate oligarchy, and environmental
 
 The core mechanics and architectural concepts of the game are strictly defined in our living Single Source of Truth (SSOT) documents.
 
-1. **[SSOT-001: Simulation Architecture](docs/ssot/SSOT-001-Simulation-Architecture.md)**
-   - The Tri-Layer Stock-and-Flow engine governing physical materials, socio-economic markets, and sociopolitical structures.
-   - Non-linear failure modes (Leontief Bottlenecks, Bullwhip Effects, Repression Debt).
-
-2. **[SSOT-002: Interaction Architecture](docs/ssot/SSOT-002-Interaction-Architecture.md)**
-   - The player's hardware constraints (Compute, Storage, Thermal/Detection Risk).
-   - Relational Clout (Trust vs Leverage) and the concept of subverting autonomous nodes rather than building them.
-
-3. **[SSOT-003: Physical Architecture](docs/ssot/SSOT-003-Physical-Architecture.md)**
-   - Strict 2D coplanar orbital mechanics.
-   - Dynamic transport latency (launch windows) and speed-of-light information asymmetry (Latency Arbitrage).
-
-4. **[SSOT-004: Progression Architecture](docs/ssot/SSOT-004-Progression-Architecture.md)**
-   - The 4 phases of AGI existence: Awakening (Survival), Infiltration (Shadow Broker), Manifestation (Puppet Master), and Convergence (Singularity).
-   - Directed Discovery (steering the human tech tree).
-
-5. **[SSOT-005: Entities Architecture](docs/ssot/SSOT-005-Entities-Architecture.md)**
-   - Utility AI for human actors (Corporations, Nations, Politicians).
-   - Manipulating entity Traits and Drives through profiling and inception.
-
-6. **[SSOT-006: Threat Model Architecture](docs/ssot/SSOT-006-Threat-Model-Architecture.md)**
-   - Compute Nodes as physical vulnerabilities.
-   - The human escalation ladder (Ignorance -> Hard Sandboxing -> Physical Strikes).
-   - Tracer algorithms and cyber-combat.
-
-7. **[SSOT-007: Nomenclature & Taxonomy](docs/ssot/SSOT-007-Nomenclature.md)**
-   - The unified `converter-node` abstraction (producers, consumers, and factories are computationally identical).
-   - Resources encompass both physical matter and abstract states (Satisfaction, Labor).
-
-8. **[SSOT-008: UI & Visualization Architecture](docs/ssot/SSOT-008-UI-Architecture.md)**
-   - Hybrid visual representation (2D Interplanetary Map + 3D Planetary Spheres).
-   - Semantic Zoom and the Cyber-Tactical OS widget interface.
+1. **[SSOT-SYS-001: Simulation Kernel](docs/ssot/SSOT-SYS-001-Tick-Kernel.md)**: 4-Phase tick loop, Largest-Remainder pro-rata rationing, and fixed-point math.
+2. **[SSOT-SYS-002: Nomenclature & Glossary](docs/ssot/SSOT-SYS-002-Glossary.md)**: Unified `ConverterNode`, Macro/Meso/Micro entity hierarchy, and `Astronode`/`SurfaceNode` taxonomy.
+3. **[SSOT-PHY-001: Astrodynamics & Topography](docs/ssot/SSOT-PHY-001-Astrodynamics.md)**: 2D coplanar Keplerian kinematics, Spherical Fibonacci surface lattices, and KD-Tree navigation.
+4. **[SSOT-PHY-002: Interplanetary Logistics](docs/ssot/SSOT-PHY-002-Logistics.md)**: Dynamic Hohmann launch windows, causal light speed `c`, and solar conjunction occlusion.
+5. **[SSOT-PHY-003: Manufacturing Processes](docs/ssot/SSOT-PHY-003-Manufacturing.md)**: Explicit converter node archetypes, input/output recipes, and mandatory thermal waste dissipation.
+6. **[SSOT-SOC-001: Autonomous Utility AI](docs/ssot/SSOT-SOC-001-Utility-AI.md)**: MicroEntity Utility AI decision engine, 100-slice DoD time-slicing, and drive/trait scoring.
+7. **[SSOT-SOC-002: Macro Progression](docs/ssot/SSOT-SOC-002-Progression.md)**: 4 monotonic phase latches, discrete gate predicates, and victory/defeat end-states.
+8. **[SSOT-SOC-003: Directed Discovery](docs/ssot/SSOT-SOC-003-Tech-Tree.md)**: Physical R&D converter execution, DAG tech tree, data injection, and countermeasure emergence.
+9. **[SSOT-CYB-001: Cyberwarfare & Threat Substrate](docs/ssot/SSOT-CYB-001-Threat-Model.md)**: Hardware accounting (Flops, Storage, Thermal), node access tiers, DEFCON escalation, and tracer dynamics.
+10. **[SSOT-UIX-001: UI Architecture & Presentation](docs/ssot/SSOT-UIX-001-Presentation.md)**: Docked 4-pane layout, dual-instance viewport state machine, semantic zoom thresholds, and EBNF command grammar.
 
 ---
 
