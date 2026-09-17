@@ -33,7 +33,7 @@ Execution proceeds in discrete, sequential simulation ticks. All calculations en
 ### 1.2 Core Domain Invariants
 
 - **Invariant 1 (Strict Mass Conservation):** In any closed subgraph with 100% transmission efficiency, the sum of resources across all stocks, converters, and in-flight transit queues at tick `t + 1` must exactly equal the sum at tick `t`. Resources cannot appear or vanish due to rounding errors.
-- **Invariant 2 (Bitwise Determinism & Zero Float):** Floating-point arithmetic (`f32`, `f64`) is strictly prohibited in the simulation kernel. All quantities, rates, efficiencies, and fractions are represented as 64-bit signed integers (`int64`) scaled by `FIXED_POINT_SCALE = 1_000_000` (1 resource unit = 1,000,000 micro-units).
+- **Invariant 2 (f64 Determinism):** The simulation kernel uses 64-bit IEEE-754 floating-point arithmetic (`f64`). To prevent cross-platform floating-point drift, execution must occur in a strict WebAssembly environment or utilize deterministic soft-float libraries. Hardware FMA (Fused Multiply-Add) and hardware transcendental instructions are strictly prohibited.
 - **Invariant 3 (Atomic 4-Phase Tick Ordering):** Every simulation tick must execute the four discrete phases sequentially: Demand Registration -> Contention & Rationing -> Flow & Transit -> Converter Integration. Phases cannot be interleaved or reordered.
 - **Invariant 4 (Order-Independent State Updates):** Within any phase, system evaluation order must not affect outcomes. State mutations are double-buffered or resolved via deterministic sorting keys (e.g., lowest Entity ID first).
 - **Invariant 5 (Capacity & Non-Negativity Bounds):** Stock levels cannot be negative (`S >= 0`). Outflows from a stock cannot exceed its current quantity (`Outflow <= S`). Inflows cannot exceed available capacity (`Inflow <= S_max - S`).
@@ -44,24 +44,9 @@ Execution proceeds in discrete, sequential simulation ticks. All calculations en
 
 ### 2.1 Formula Definitions
 
-- **Fixed-Point Multiplication:**
-  `mul_fixed(a, b) = (a * b) / FIXED_POINT_SCALE`
-
-- **Fixed-Point Division:**
-  `div_fixed(a, b) = (a * FIXED_POINT_SCALE) / b`
-
-- **Largest-Remainder (Hamilton-Hare) Pro-Rata Allocation:**
-  When total requested demand `D_total = sum(d_i)` exceeds available stock `S_avail`:
-  1. Base integer allocation for consumer `i`:
-     `alloc_base[i] = (d_i * S_avail) / D_total`
-  2. Remainder score for consumer `i`:
-     `rem_score[i] = (d_i * S_avail) % D_total`
-  3. Total unallocated remainder:
-     `R = S_avail - sum(alloc_base[i])`
-  4. Sort consumers descending by `rem_score[i]`, breaking ties deterministically by `ConsumerID` ascending.
-  5. Add 1 micro-unit to the top `R` consumers:
-     `alloc_final[i] = alloc_base[i] + (1 if rank[i] < R else 0)`
-
+- **Pro-Rata Allocation:**
+  When total requested demand `D_total = sum(d_i)` exceeds available stock `S_avail`, allocate continuously:
+  `alloc[i] = d_i * (S_avail / D_total)`
 - **Converter Recipe Execution:**
   For recipe requiring input ratios `req[j]` to produce output ratios `prod[k]`:
   1. Limiting batch count based on input availability:
@@ -71,36 +56,36 @@ Execution proceeds in discrete, sequential simulation ticks. All calculations en
   3. Input consumption:
      `consumed[j] = batches_executed * req[j]`
   4. Effective output generation scaled by operational health `H`:
-     `effective_prod[k] = mul_fixed(batches_executed * prod[k], H)`
+     `effective_prod[k] = batches_executed * prod[k] * H`
 
 - **Structural Wear & Upkeep Degradation:**
   Let `U_provided` be upkeep delivered and `U_required` be rated upkeep per tick:
   1. If `U_provided >= U_required`:
-     `H_next = min(FIXED_POINT_SCALE, H + WEAR_REPAIR_RATE)`
+     `H_next = min(1.0, H + WEAR_REPAIR_RATE)`
   2. If `U_provided < U_required`:
-     `starvation_ratio = div_fixed(U_required - U_provided, U_required)`
-     `decay_delta = mul_fixed(WEAR_BASE_DECAY, starvation_ratio)`
-     `H_next = max(0, H - decay_delta)`
+     `starvation_ratio = (U_required - U_provided) / U_required`
+     `decay_delta = WEAR_BASE_DECAY * starvation_ratio`
+     `H_next = max(0.0, H - decay_delta)`
 
 - **In-Flight Flow Latency:**
   When a resource packet of amount `Q` is dispatched along edge `e` at tick `t_current` with latency `tau`:
   `arrival_tick = t_current + tau`
-  `received_amount = mul_fixed(Q, edge_efficiency)`
+  `received_amount = Q * edge_efficiency`
   `loss_amount = Q - received_amount`
 
 ### 2.2 Variable Dictionary & Standard Units
 
 | Variable | Meaning | Standard Unit | Valid Range |
 | :--- | :--- | :--- | :--- |
-| `S` | Current stock quantity | Micro-units (`1e-6` units) | `0 <= S <= S_max` |
-| `S_max` | Maximum storage capacity | Micro-units (`1e-6` units) | `0 <= S_max <= 1e15` |
-| `d_i` | Demanded quantity by consumer `i` | Micro-units (`1e-6` units) | `d_i >= 0` |
-| `F_max` | Flow edge maximum capacity per tick | Micro-units per tick | `F_max >= 0` |
+| `S` | Current stock quantity | Float unit (`f64`) | `0.0 <= S <= S_max` |
+| `S_max` | Maximum storage capacity | Float unit (`f64`) | `0.0 <= S_max` |
+| `d_i` | Demanded quantity by consumer `i` | Float unit (`f64`) | `d_i >= 0.0` |
+| `F_max` | Flow edge maximum capacity per tick | Float unit per tick (`f64`) | `F_max >= 0.0` |
 | `tau` | Flow edge transit latency | Integer Ticks | `tau >= 0` |
-| `edge_efficiency`| Transmission efficiency | Fixed-point fraction (`1e6 = 1.0`) | `0 <= edge_efficiency <= 1_000_000` |
-| `H` | Converter structural health | Fixed-point fraction (`1e6 = 1.0`) | `0 <= H <= 1_000_000` |
-| `B_max` | Converter max batches per tick | Integer count | `B_max >= 0` |
-| `U_required` | Required maintenance upkeep | Micro-units per tick | `U_required >= 0` |
+| `edge_efficiency`| Transmission efficiency | Float fraction (`f64`) | `0.0 <= edge_efficiency <= 1.0` |
+| `H` | Converter structural health | Float fraction (`f64`) | `0.0 <= H <= 1.0` |
+| `B_max` | Converter max batches per tick | Float count (`f64`) | `B_max >= 0.0` |
+| `U_required` | Required maintenance upkeep | Float unit per tick (`f64`) | `U_required >= 0.0` |
 
 ---
 
@@ -161,11 +146,10 @@ Execution proceeds in discrete, sequential simulation ticks. All calculations en
 
 ## 📊 4. Constants, Figures & Baseline Data Tables
 
-| Parameter / Constant | Exact Integer Value | Meaning |
+| Parameter / Constant | Exact Value | Meaning |
 | :--- | :--- | :--- |
-| `FIXED_POINT_SCALE` | `1_000_000` | 1 full unit = 1,000,000 micro-units |
-| `WEAR_BASE_DECAY` | `5_000` | 0.005 (0.5% health loss per unmaintained tick) |
-| `WEAR_REPAIR_RATE` | `10_000` | 0.010 (1.0% health restored per fully maintained tick) |
+| `WEAR_BASE_DECAY` | `0.005` | 0.5% health loss per unmaintained tick |
+| `WEAR_REPAIR_RATE` | `0.010` | 1.0% health restored per fully maintained tick |
 | `MAX_TRANSIT_QUEUE_DEPTH` | `16_384` | Max active in-flight packets per flow edge buffer |
 
 ### 4.1 Data-Oriented Component Memory Layout
@@ -174,9 +158,9 @@ Execution proceeds in discrete, sequential simulation ticks. All calculations en
 // Stock Component (Aligned contiguous array)
 struct StockComponent {
     uint32 resource_id;
-    int64 current_amount;       // Fixed-point micro-units
-    int64 capacity;             // Fixed-point micro-units
-    int64 reserved_amount;      // Reserved for pending outgoing flows
+    f64 current_amount;
+    f64 capacity;
+    f64 reserved_amount;
 }
 
 // Flow Edge Component
@@ -184,25 +168,25 @@ struct FlowEdgeComponent {
     uint32 edge_id;
     uint32 source_stock_id;
     uint32 dest_target_id;      // StockId or ConverterId
-    int64 max_flow_per_tick;    // F_max micro-units
+    f64 max_flow_per_tick;      // F_max
     uint32 latency_ticks;       // tau
-    int32 efficiency_fixed;     // 0 to 1_000_000
+    f64 efficiency;             // 0.0 to 1.0
 }
 
 // In-Flight Packet Entry
 struct InFlightPacket {
     uint32 resource_id;
-    int64 amount;               // Fixed-point micro-units
+    f64 amount;
     uint64 arrival_tick;        // Absolute delivery tick
 }
 
 // Converter Component
 struct ConverterComponent {
     uint32 recipe_id;
-    int32 health_fixed;         // H: 0 to 1_000_000
-    uint32 max_batches_per_tick;
-    int64 upkeep_required;
-    int64 upkeep_received;
+    f64 health;                 // H: 0.0 to 1.0
+    f64 max_batches_per_tick;
+    f64 upkeep_required;
+    f64 upkeep_received;
 }
 ```
 
@@ -210,8 +194,8 @@ struct ConverterComponent {
 
 ## ⚠️ 5. Known Hallucination Traps & Anti-Patterns
 
-- **Trap 1 (Floating-Point Drift):** Never cast amounts to `f32` or `f64`. A calculation like `100 / 3.0` will introduce floating point variance across different CPU architectures, breaking multiplayer lockstep and save determinism.
-- **Trap 2 (Integer Truncation Loss in Rationing):** In integer division `(d_i * S) / D`, the sum of integer quotients is strictly less than or equal to `S`. Dropping the remainder destroys mass. Always use the Largest-Remainder method to distribute remaining units.
+- **Trap 1 (Hardware Floating-Point Drift):** While the state uses `f64`, you must never use non-deterministic hardware math (like `f64::cos`, `f64::exp`) or rely on platform-dependent FMA (Fused Multiply-Add) instructions. This will introduce floating point variance across different CPU architectures, breaking multiplayer lockstep and save determinism. Wasm or soft-float is required.
+- **Trap 2 (Fractional Allocation Loss in Rationing):** While `f64` prevents the severe integer truncation seen in fixed-point math, summing prorated continuous demand over many actors can still suffer from floating-point precision loss at the lowest bits. Order of summation matters. Always sum demands deterministically sorted by ConsumerID before rationing.
 - **Trap 3 (Off-by-One Packet Delivery):** A packet dispatched at tick `10` with latency `tau = 3` arrives at tick `13`. It must be processed during Phase 3 of tick `13`, not tick `12` or `14`.
 - **Trap 4 (In-Flight Destination Saturation):** Never check destination capacity only at departure. If multiple edges feed the same stock, or if consumption stalls, the destination may fill before in-flight packets arrive. The overflow policy must be deterministic.
 - **Trap 5 (Converter Order Bias):** Converters executing in loop order `0, 1, 2...` will starve later converters of shared input stocks. Demand must be registered globally in Phase 1 and rationed in Phase 2 before any converter executes in Phase 4.

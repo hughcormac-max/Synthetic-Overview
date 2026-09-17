@@ -41,6 +41,11 @@ This project is built around **strict layer decoupling**, **contract-first inter
    - All mathematical formulations and variable representations in documentation and code comments follow ASCII/plain-text standards (Strict Zero-LaTeX policy).
    - Example: `P = P_base * (1 + k * (D - S) / S)`.
 
+4. **ECS Simulation Engine & Astrodynamics:**
+   - The simulation utilizes a unified 3D Cartesian coordinate space for both planetary surfaces and interplanetary navigation.
+   - Computations are grounded in `f64` IEEE-754 deterministic math (via WebAssembly or soft-float) to prevent precision jitter while maintaining strict cross-platform determinism.
+   - Interplanetary orbits are restricted to the 2D ecliptic plane (`z = 0`) to optimize utility AI pathfinding, while local surface topography utilizes the full 3D Fibonacci sphere.
+
 ---
 
 ## 🛡️ 4. Cross-Cutting Concerns

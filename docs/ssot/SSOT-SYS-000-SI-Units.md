@@ -32,7 +32,7 @@ Every physical calculation, astrodynamic formula, manufacturing recipe, energy f
 
 - **Invariant 1 (Strict SI Grounding):** All quantities in code, state, memory, and data serialization must be expressed in canonical SI base or coherent derived units, or exact decimal integer multiples thereof (e.g. `km`, `t`) with documented fixed conversion factors.
 - **Invariant 2 (Discrete Time Grounding):** The base unit of simulated time is the SI second (`s`). The discrete simulation kernel tick is strictly defined as `1 tick = 60 s` (1 minute). All per-tick rates are exact functions of this time step: `rate_per_tick = rate_per_second * 60`.
-- **Invariant 3 (Fixed-Point Integer Determinism):** To prevent cross-platform floating-point divergence, all fractional physical values in simulation state must use integer fixed-point math with a standard precision scaling factor `FIXED_POINT_SCALE = 1_000_000` (`1e6` micro-units) unless explicitly specified otherwise.
+- **Invariant 3 (f64 Determinism):** To prevent cross-platform floating-point divergence, all fractional physical values in simulation state must use strictly deterministic `f64` arithmetic (IEEE-754 semantics). Using hardware transcendentals or non-deterministic math is strictly prohibited.
 - **Invariant 4 (Zero-LaTeX Notation):** All formulas, units, variables, and constants in this and dependent specifications must be written in clean, human-readable plain text or ASCII math. Single dollar signs or double dollar signs and LaTeX macros are strictly prohibited.
 - **Invariant 5 (Downward Dimensional Inheritance):** Any new physical quantity introduced in dependent SSOTs must declare its dimensional formula in terms of base dimensions `[L]`, `[M]`, `[T]`, `[I]`, `[Theta]`, `[N]`, `[J]` defined in Section 2.1.
 
@@ -74,7 +74,7 @@ Every physical calculation, astrodynamic formula, manufacturing recipe, energy f
 
 | Prefix | Symbol | Factor | Applied Unit | Canonical Simulation Role |
 | :--- | :--- | :--- | :--- | :--- |
-| `micro-` | `u` | `1e-6` | `um`, `urad` | Fixed-point angle and precision fraction scale |
+| `micro-` | `u` | `1e-6` | `um`, `urad` | High-precision angles and state vectors |
 | `milli-` | `m` | `1e-3` | `mm`, `ms` | Fine structural clearances, telemetry delays |
 | `kilo-` | `k` | `1e3` | `km`, `kg`, `kW`, `kN` | Celestial distances (`km`), mechanical forces (`kN`) |
 | `mega-` | `M` | `1e6` | `MJ`, `MW`, `MPa` | Industrial reactor outputs, bulk material stress |
@@ -85,25 +85,18 @@ Permitted non-SI decimal multiples:
 - **Kilometer (`km`):** `1 km = 1_000 m` (used for macro planetary orbital semi-major axes and radii).
 - **Simulation Tick (`tick`):** `1 tick = 60 s` (fundamental discrete time quantum).
 
-### 2.4 Fixed-Point Conversion & Scaling Rules
+### 2.4 Standard f64 Conversion & Scaling Rules
+  
+All physical simulation quantities must be stored and manipulated as `f64` floats.
 
-All fixed-point integer conversions must preserve precision through ordered integer arithmetic (multiply before divide):
+- **Float Representation:**
+  `value = raw_value * factor`
 
-- **Integer Fixed-Point Representation:**
-  `value_fixed = integer_round(value_real * FIXED_POINT_SCALE)`
-  where `FIXED_POINT_SCALE = 1_000_000`.
-
-- **Fixed-Point Multiplication:**
-  `mul_fixed(x, y) = (x * y) / FIXED_POINT_SCALE`
-
-- **Fixed-Point Division:**
-  `div_fixed(x, y) = (x * FIXED_POINT_SCALE) / y`
-
-- **SI Velocity to Tick Distance (km):**
-  `d_km_per_tick = (v_m_s * 60) / 1000 = (v_m_s * 3) / 50`
+- **SI Velocity to Tick Distance (m):**
+  `d_m_per_tick = v_m_s * 60.0`
 
 - **SI Acceleration to Tick Velocity Change (m/s):**
-  `delta_v_per_tick = a_m_s2 * 60`
+  `delta_v_per_tick = a_m_s2 * 60.0`
 
 ---
 
@@ -143,12 +136,12 @@ All fixed-point integer conversions must preserve precision through ordered inte
 
 | Input Quantity | Declared Unit | Valid Dimension | Action / Conversion | Resulting Canonical Storage |
 | :--- | :--- | :--- | :--- | :--- |
-| Orbital Radius | `km` | `[L]` | `r_m = r_km * 1_000` | `int64` meters or `int64` km |
-| Delta-V | `m/s` | `[L] / [T]` | Identity | `int64` micro-(m/s) (`1e-6 m/s`) |
-| Vessel Mass | `t` (ton) | `[M]` | `m_kg = m_t * 1_000` | `int64` kilograms |
-| Reactor Output | `MW` | `[M]*[L]^2 / [T]^3` | `p_w = p_mw * 1_000_000` | `int64` watts |
-| Thrust Force | `kN` | `[M]*[L] / [T]^2` | `f_n = f_kn * 1_000` | `int64` newtons |
-| Time Duration | `min` | `[T]` | `t_s = t_min * 60` | `int64` seconds / ticks |
+| Orbital Radius | `km` | `[L]` | `r_m = r_km * 1_000.0` | `f64` meters |
+| Delta-V | `m/s` | `[L] / [T]` | Identity | `f64` m/s |
+| Vessel Mass | `t` (ton) | `[M]` | `m_kg = m_t * 1_000.0` | `f64` kilograms |
+| Reactor Output | `MW` | `[M]*[L]^2 / [T]^3` | `p_w = p_mw * 1_000_000.0` | `f64` watts |
+| Thrust Force | `kN` | `[M]*[L] / [T]^2` | `f_n = f_kn * 1_000.0` | `f64` newtons |
+| Time Duration | `min` | `[T]` | `t_s = t_min * 60.0` | `f64` seconds / ticks |
 | Non-SI Unit | `lb`, `mi`, `ft` | Any | REJECT & PANIC | Invalid Domain Specification |
 
 ---
@@ -178,7 +171,7 @@ All fixed-point integer conversions must preserve precision through ordered inte
 - **Trap 1 (Imperial Unit Intrusion):** Using feet (`ft`), miles (`mi`), pounds (`lb`), or atmospheres (`atm`). All mechanics, thrust, and structures must strictly use meters (`m`), kilograms (`kg`), and pascals (`Pa`).
 - **Trap 2 (Tick vs Second Confusion):** Confusing time parameters in seconds with time parameters in ticks. Standard acceleration is in `m/s^2`, but velocity change over a tick is `delta_v = a * 60 s`. Never multiply `a * 1` assuming 1 tick is 1 second.
 - **Trap 3 (Specific Impulse Unit Ambiguity):** Specific impulse can be quoted in seconds (`I_sp_s`) or effective exhaust velocity (`v_e` in `m/s`). In this project, all rocket equations must explicitly distinguish `I_sp` (in `s`) from `v_e` (in `m/s`) via `v_e = I_sp * g_0` where `g_0 = 9.80665 m/s^2`.
-- **Trap 4 (Fixed-Point Overflow on Intermediate Multiply):** When calculating `(x * y) / FIXED_POINT_SCALE`, multiplying two large `int64` numbers can overflow `int64::MAX`. Fixed-point math must use `int128` or checked widening arithmetic for intermediate multiplication.
+- **Trap 4 (Precision Loss in Extremes):** Using `f64` prevents overflow during scaling operations, but precision loss (catastrophic cancellation) can occur when summing very small differences (like sub-millimeter delta-v) into very large quantities (like AU-scale orbital radii). Always group additions of similar magnitude before adding to a massive accumulator.
 - **Trap 5 (LaTeX Formula Formatting):** Writing math using LaTeX math formatting or LaTeX macros. This violates repository zero-LaTeX rules. Always use ASCII text: `v = sqrt(mu / r)`.
 
 ---
