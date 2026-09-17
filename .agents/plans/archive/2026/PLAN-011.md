@@ -1,16 +1,17 @@
 ---
 id: PLAN-011
 title: "Transition SSOT to f64 Math & Unified 3D Coordinates"
-status: in-progress
+status: completed
 author: "Antigravity"
 created: 2026-09-17
 updated: 2026-09-17
+completed_at: 2026-09-17
 branch: "main"
 ---
 
 # PLAN-011: Transition SSOT to f64 Math & Unified 3D Coordinates
 
-> **Status:** `in-progress` | **Created:** 2026-09-17 | **Last Updated:** 2026-09-17
+> **Status:** `completed` | **Created:** 2026-09-17 | **Last Updated:** 2026-09-17
 > **Author:** Antigravity | **Branch:** main
 
 ---
@@ -100,8 +101,10 @@ ripgrep "\\$" docs/ssot/
 ## 📝 5. Deviations & Retrospective (Post-Implementation)
 
 ### 5.1 Architectural Deviations
-- *[None logged during drafting. Update during/after implementation.]*
+- We discovered unauthorized code modifications in `crates/synthetic-client` attempting to implement these changes preemptively; they were reverted to ensure the plan strictly targets documentation first, as defined in the non-goals.
+- `SSOT-SYS-000-SI-Units.md` required a more extensive rewrite of its conversion rules (Section 2.4) to replace Hamilton-Hare integer rationing with continuous `f64` prorated logic.
 
 ### 5.2 Lessons Learned & Follow-Up Tasks
-- *[None logged during drafting. Update during/after implementation.]*
+- The unified 3D space with `f64` removes significant translation complexity across boundaries, but precision boundaries (Catastrophic Cancellation) at AU-scale orbits must be carefully watched.
+- **Follow-up:** Initiate a new plan to begin translating the actual rust codebase (`crates/`) to the new `f64` specification and implement strict WebAssembly / soft-float testing boundaries.
 

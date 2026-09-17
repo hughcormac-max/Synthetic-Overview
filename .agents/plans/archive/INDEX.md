@@ -32,6 +32,7 @@ Archived plans are categorized by year under `.agents/plans/archive/YYYY/PLAN-XX
 | [PLAN-008](2026/PLAN-008.md) | Re-architect SSOT for SI Units, Astrodynamics, and Topography | `completed` | Antigravity | 2026-09-13 | 2026-09-16 | [2026/PLAN-008.md](2026/PLAN-008.md) |
 | [PLAN-009](2026/PLAN-009.md) | Implement WebGPU Rendered Surface View with Backface Culling | `completed` | Antigravity | 2026-09-14 | 2026-09-16 | [2026/PLAN-009.md](2026/PLAN-009.md) |
 | [PLAN-010](2026/PLAN-010.md) | Implement Interactive Orbit & Zoom Camera Controls for Planetary Globe View | `completed` | Antigravity | 2026-09-16 | 2026-09-16 | [2026/PLAN-010.md](2026/PLAN-010.md) |
+| [PLAN-011](2026/PLAN-011.md) | Transition SSOT to f64 Math & Unified 3D Coordinates | `completed` | Antigravity | 2026-09-17 | 2026-09-17 | [2026/PLAN-011.md](2026/PLAN-011.md) |
 
 ---
 
