@@ -86,7 +86,7 @@ Permitted non-SI decimal multiples:
 - **Simulation Tick (`tick`):** `1 tick = 60 s` (fundamental discrete time quantum).
 
 ### 2.4 Standard f64 Conversion & Scaling Rules
-  
+
 All physical simulation quantities must be stored and manipulated as `f64` floats.
 
 - **Float Representation:**

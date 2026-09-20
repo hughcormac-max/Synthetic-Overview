@@ -21,7 +21,7 @@ The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, fo
 | SSOT ID | Title & Domain Scope | Category | Key Invariants / Formulas | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **SSOT-SYS-000** | [Universal SI Units & Dimensional Metrology](SSOT-SYS-000-SI-Units.md) | Specification | Base SI units (m, kg, s, A, K, mol, cd), 1 tick = 60s, fixed-point scale 1e6, universal constants c, G, g_0, AU | Approved |
-| **SSOT-SYS-001** | [Discrete Stock-and-Flow Simulation Kernel](SSOT-SYS-001-Tick-Kernel.md) | Specification | 4-Phase tick loop, Largest-Remainder pro-rata allocation, zero-float fixed-point math (`1e6`), structural wear | Approved |
+| **SSOT-SYS-001** | [Discrete Stock-and-Flow Simulation Kernel](SSOT-SYS-001-Tick-Kernel.md) | Specification | 4-Phase tick loop, UTC ISO clock, variable sim speed multipliers, structural wear | Approved |
 | **SSOT-SYS-002** | [Universal Simulation Taxonomy & Entity Glossary](SSOT-SYS-002-Glossary.md) | Specification | Singular `ConverterNode` primitive, Macro/Meso/Micro hierarchy, `Astronode`/`SurfaceNode` distinction | Approved |
 
 ### 🌌 Physical & Spatial (`PHY`)
@@ -30,7 +30,7 @@ The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, fo
 | **SSOT-PHY-001** | [2D Keplerian Astrodynamics, Rocket Mechanics & Orbital Transfers](SSOT-PHY-001-Astrodynamics.md) | Specification | 2D coplanar Keplerian kinematics, Tsiolkovsky rocket equation, thrust/Isp conversion, Laplace SOI boundaries, Hohmann transfers | Approved |
 | **SSOT-PHY-002** | [Interplanetary Logistics, Transfer Windows & Relativistic Latency](SSOT-PHY-002-Logistics.md) | Specification | Hohmann transfer flight times, phase angle launch gating, finite light speed `c`, solar conjunction occlusion | Approved |
 | **SSOT-PHY-003** | [Manufacturing Processes & Converter Node Catalogs](SSOT-PHY-003-Manufacturing.md) | Specification | Explicit converter archetype catalog, input/output recipes, mandatory thermal waste, gateway converters | Approved |
-| **SSOT-PHY-004** | [Spherical Fibonacci Surface Topography & Spatial Indexing](SSOT-PHY-004-Surface-Topography.md) | Specification | Spherical Fibonacci spiral lattice, Golden angle stepping, local 3D barycentric coordinate isolation, KD-Tree spatial queries, Karman boundary transitions | Approved |
+| **SSOT-PHY-004** | [AstroNode Architecture & Spherical Fibonacci Surface Topography](SSOT-PHY-004-AstroNode-Architecture.md) | Specification | 2D coplanar Keplerian orbits, Spherical Fibonacci surface nodes, discrete entity locations | Approved |
 
 ### 👥 Sociology & Entities (`SOC`)
 | SSOT ID | Title & Domain Scope | Category | Key Invariants / Formulas | Status |
@@ -47,7 +47,7 @@ The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, fo
 ### 🖥️ Presentation & UI (`UIX`)
 | SSOT ID | Title & Domain Scope | Category | Key Invariants / Formulas | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **SSOT-UIX-001** | [UI Architecture, Viewport State Machine & Terminal Grammar](SSOT-UIX-001-Presentation.md) | Specification | Docked 4-pane layout, dual-instance viewport state machine, altitude semantic zoom thresholds, EBNF terminal grammar | Approved |
+| **SSOT-UIX-001** | [UI Architecture, Viewport State Machine & Terminal Grammar](SSOT-UIX-001-Presentation.md) | Specification | Full-screen viewport, floating UI windows, semantic zoom thresholds, EBNF terminal grammar | Approved |
 
 ---
 

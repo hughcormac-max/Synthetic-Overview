@@ -1,9 +1,11 @@
 mod globe;
+mod systems;
 
 use bevy::prelude::*;
 use bevy::render::camera::ClearColorConfig;
 use globe::viewport::MainViewPanelMarker;
 use globe::GlobePlugin;
+use systems::AstronomyPlugin;
 
 const BORDER_COLOR: Color = Color::srgb(0.22, 0.24, 0.28);
 const TEXT_COLOR: Color = Color::srgb(0.85, 0.88, 0.92);
@@ -24,6 +26,7 @@ fn main() {
             ..default()
         }))
         .add_plugins(GlobePlugin)
+        .add_plugins(AstronomyPlugin)
         .add_systems(Startup, setup_ui)
         .run();
 }

@@ -8,6 +8,7 @@ description = "Bevy-based presentation and UI client for Synthetic Overview"
 
 [dependencies]
 bevy = "0.15"
+serde_json = "1"
 synthetic-core = { path = "../synthetic-core" }
 
 [lints]
