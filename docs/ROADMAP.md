@@ -7,7 +7,7 @@
 
 ## 🎯 1. Vision & Core Objectives
 
-This roadmap outlines the long-term vision, scheduled milestone phases, and backlog ideas for the project. Tasks from this roadmap are decomposed into formal [PLAN-XXX](../.agents/skills/plan/resources/TEMPLATE.md) specifications and tracked daily on the active [TASKS.md](TASKS.md) board.
+This roadmap outlines the long-term vision, scheduled milestone phases, and backlog ideas for the project. Tasks from this roadmap are decomposed into formal [PLAN-XXX](../.agents/skills/plan-human/resources/TEMPLATE.md) specifications and tracked daily on the active [TASKS.md](TASKS.md) board.
 
 ---
 

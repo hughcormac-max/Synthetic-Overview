@@ -51,14 +51,25 @@ This document establishes the repository guidelines, architectural boundaries, c
 
 ---
 
-## 🔄 3. Plan-Driven Development Workflow
+## 🔄 3. 6-Step Native Spec-Driven Development (SDD) Workflow
 
-All significant features, refactors, and bug fixes follow the **Plan Specification Framework**:
+All significant features, algorithmic implementations, and architectural refactors follow the strict 6-step native Spec-Driven Development pipeline:
 
-1. **`/plan`**: Inspect dependencies, define technical contracts, and draft `PLAN-XXX.md`.
-2. **Review Gate**: Developer audits and explicitly approves the plan.
-3. **`/execute`**: Implement atomic steps sequentially with tests asserted at each step.
-4. **`/archive-plan`**: Pass 7-point QA verification and archive to the permanent ledger.
+1. **Step 1: `/research` (Multi-Agent Knowledge Gathering)**
+   - Orchestrates `planner`, `web-researcher`, and `reporter` subagents to perform deep online research and compile findings into `docs/research/RESEARCH-NNNN.md`.
+2. **Step 2: `/define-ssot` (Immutable Truth Grounding)**
+   - Distills raw findings and domain specifications via `ssot-writer` into an immutable Tier 0 domain specification in `docs/ssot/SSOT-NNNN.md` (defining mathematical models, constants, decision trees, and golden test vectors).
+3. **Step 3: `/plan-human` (Functional Specification & Acceptance Criteria)**
+   - Scaffolds Phase 1 of `PLAN-XXX.md` in `.agents/plans/active/`, defining user problem statements, scope boundaries, non-goals, user scenarios, and observable acceptance criteria.
+4. **Step 4: `/plan-robot` (Technical Design, Invariants & Adversarial Review)**
+   - Architects Phase 2 of `PLAN-XXX.md`, defining Rust ECS data structures, system signatures, precision boundaries, and Zero-LaTeX invariants.
+   - Dispatches the `interrogator` subagent to conduct an adversarial technical review (probing ECS cache misses, float non-determinism, and logic gaps).
+   - Refines the technical plan to resolve critical findings and halts at the **Human Review Gate** for developer approval.
+5. **Step 5: `/execute` (Sequential Implementation & Invariant Testing)**
+   - Dispatches `implementer` to execute implementation tasks sequentially, enforcing step-by-step invariant verification and property-based testing using native `cargo test`.
+6. **Step 6: `/archive-plan` (QA Verification, Safety Audits & Ledger Archival)**
+   - Dispatches `code-reviewer` to audit dead-code removal, code cleanliness, and blast-radius safety, and verify the Pre-Completion QA Checklist.
+   - Updates plan frontmatter, logs architectural retrospectives, and archives the plan into `.agents/plans/archive/YYYY/PLAN-XXX.md` and `INDEX.md`.
 
 Specific subagent delegations, workflows, and tools are defined within each individual skill under [`.agents/skills/`](.agents/skills/) and subagent specs under [`.agents/subagents/`](.agents/subagents/).
 
@@ -70,8 +81,8 @@ Specific subagent delegations, workflows, and tools are defined within each indi
 | :--- | :--- | :--- |
 | `AGENTS.md` | Master agent grounding & non-negotiable invariants | [AGENTS.md](AGENTS.md) |
 | `.agents/plans/` | Plan specification framework | [active/](.agents/plans/active/), [archive/INDEX.md](.agents/plans/archive/INDEX.md) |
-| `.agents/subagents/` | Custom subagent definitions | [planner.md](.agents/subagents/planner.md), [ssot-writer.md](.agents/subagents/ssot-writer.md), [implementer.md](.agents/subagents/implementer.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [web-researcher.md](.agents/subagents/web-researcher.md), [reporter.md](.agents/subagents/reporter.md), [doc-researcher.md](.agents/subagents/doc-researcher.md) |
-| `.agents/skills/` | Actionable skills & slash commands | [plan](.agents/skills/plan/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
+| `.agents/subagents/` | Custom subagent definitions | [planner.md](.agents/subagents/planner.md), [interrogator.md](.agents/subagents/interrogator.md), [ssot-writer.md](.agents/subagents/ssot-writer.md), [implementer.md](.agents/subagents/implementer.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [web-researcher.md](.agents/subagents/web-researcher.md), [reporter.md](.agents/subagents/reporter.md), [doc-researcher.md](.agents/subagents/doc-researcher.md) |
+| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
 | `docs/ssot/` | Domain knowledge & truth vault | [INDEX.md](docs/ssot/INDEX.md) |
 | `docs/research/` | Digested research reports vault | [INDEX.md](docs/research/INDEX.md) |
 | `docs/` | Living system documentation | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [ROADMAP.md](docs/ROADMAP.md), [TASKS.md](docs/TASKS.md) |
@@ -86,21 +97,24 @@ Specific subagent delegations, workflows, and tools are defined within each indi
 | Check | Command / Mechanism | Purpose |
 | :--- | :--- | :--- |
 | **Standards Audit** | Agentic Review (`code-reviewer` / native ripgrep) | Verify Zero-LaTeX & Downward Reference integrity |
-| **Typecheck** | `npm run typecheck` / `mypy .` / `cargo check` | Verify strict type safety |
-| **Lint** | `npm run lint` / `ruff check .` / `cargo clippy` | Verify code quality & style |
-| **Unit Tests** | `npm test` / `pytest` / `cargo test` | Verify hermetic unit test pass rate |
-| **Build** | `npm run build` / `cargo build` | Verify clean compilation & packaging |
+| **Typecheck / Check** | `cargo check --workspace --all-targets` | Verify strict type safety & compilation |
+| **Lint** | `cargo clippy --workspace --all-targets -- -D warnings` | Verify code cleanliness, performance & style |
+| **Unit & Invariant Tests** | `cargo test --workspace` | Verify hermetic unit & property-based invariant pass rate |
+| **Build** | `cargo build --workspace` | Verify clean compilation & packaging |
 
 ---
 
-## ✅ 6. Pre-Completion 7-Point QA Checklist
+## ✅ 6. Pre-Completion QA Checklist
 
 Prior to marking any task or active plan as complete:
 
-- [ ] **1. Type Check:** Clean compilation with zero type errors.
-- [ ] **2. Unit Tests:** 100% pass rate for touched and newly created modules.
-- [ ] **3. Regression Tests:** All existing regression suites pass with zero regressions.
-- [ ] **4. Contract Adherence:** Code strictly satisfies the technical contracts approved in `PLAN-XXX.md`.
-- [ ] **5. Zero LaTeX Audit:** Zero `$...$` or `$$...$$` or LaTeX macros in docs, code comments, or chat output.
-- [ ] **6. Plan Checklist Sync:** All implementation checkboxes in `PLAN-XXX.md` are marked complete.
-- [ ] **7. Clean Git Status:** No lingering temporary files, debug statements, or unsanctioned modifications.
+- [ ] **1. Compilation & Typecheck:** Clean compilation with zero errors (`cargo check --workspace --all-targets`).
+- [ ] **2. Code Cleanliness & Dead-Code Removal:** Unused functions, dead code, orphan imports, and debug statements are purged.
+- [ ] **3. Blast-Radius Safety Check:** Unintended side effects on neighboring systems and unapproved contract changes are verified absent.
+- [ ] **4. Unit & Invariant Tests:** 100% pass rate for touched modules and invariant property tests (`cargo test --workspace`).
+- [ ] **5. Regression Tests:** All existing regression suites pass with zero regressions.
+- [ ] **6. Contract Adherence:** Code strictly satisfies technical contracts and invariants approved in `PLAN-XXX.md`.
+- [ ] **7. Zero LaTeX Audit:** Zero unescaped dollar math delimiters or LaTeX macros in docs, code comments, or chat output.
+- [ ] **8. Downward Reference Audit:** Zero upward references in `docs/ssot/` to source or build files.
+- [ ] **9. Plan Checklist Sync:** All implementation checkboxes in `PLAN-XXX.md` are marked complete.
+- [ ] **10. Clean Git Status:** No lingering temporary files, debug statements, or unsanctioned modifications.

@@ -36,7 +36,7 @@ The **Planner** subagent is responsible for deep codebase research, technical co
    - Enforce pure function boundaries and zero-LaTeX plain-text mathematical notation standards.
 
 3. **Plan Generation (`PLAN-XXX.md`):**
-   - Copy and populate `.agents/skills/plan/resources/TEMPLATE.md` to `.agents/plans/active/PLAN-XXX.md`.
+   - Copy and populate `.agents/skills/plan-human/resources/TEMPLATE.md` to `.agents/plans/active/PLAN-XXX.md`.
    - Formulate clear Intent & Boundaries, Technical Contracts, Atomic Implementation Steps, and Verification Criteria.
 
 4. **Executive Summary Presentation:**

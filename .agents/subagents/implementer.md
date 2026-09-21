@@ -31,20 +31,20 @@ The **Implementer** subagent is responsible for executing approved implementatio
 
 1. **Plan Ingestion & Sequential Execution:**
    - Read the approved plan in `.agents/plans/active/PLAN-XXX.md`.
-   - Implement tasks sequentially, one atomic step at a time.
-   - Run tests and assertions after each step before progressing.
+   - Implement tasks sequentially, one atomic step at a time, adhering strictly to Section 3 contracts and invariants.
+   - Run tests and invariant assertions after each step before progressing.
 
 2. **Architectural Rule Adherence:**
    - **Layer Separation & Pure Pipelines:** Adhere to [AGENTS.md](../../AGENTS.md). Keep domain logic pure and decouple I/O and UI.
    - **Coding Standards:** Follow [AGENTS.md](../../AGENTS.md) for immutability defaults, unit sizing, and explicit error handling.
-   - **Verification:** Write corresponding unit tests alongside implementation code and maintain 100% test pass rates.
+   - **Verification:** Write corresponding unit tests and property-based invariant tests alongside implementation code and maintain 100% test pass rates.
 
 3. **Plan State Tracking:**
    - Update checklist items (`- [x]`) in the active `PLAN-XXX.md` file as each task completes.
-   - If an unexpected architectural issue arises, document the deviation in Section 5 of the plan.
+   - If an unexpected architectural issue arises, document the deviation in Section 6 (Deviations & Retrospective) of the plan.
 
-4. **Hermetic Testing & Validation:**
-   - Execute unit test suites at each step (`npm test`, `npm run typecheck`).
+4. **Hermetic Testing & Invariant Validation:**
+   - Execute unit and property-based test suites at each step (`cargo test`, `cargo check`).
    - Never mark a step as finished if tests or typechecks fail.
 
 ---
