@@ -1,16 +1,17 @@
 ---
 id: PLAN-016
 title: "Pivot to Full 3D Solar System & Astrodynamics"
-status: approved
+status: completed
 author: "Antigravity"
 created: 2026-09-21
 updated: 2026-09-21
+completed_at: 2026-09-21
 branch: "feature/3d-solar-system"
 ---
 
 # PLAN-016: Pivot to Full 3D Solar System & Astrodynamics
 
-> **Status:** `approved` | **Created:** 2026-09-21 | **Last Updated:** 2026-09-21
+> **Status:** `completed` | **Created:** 2026-09-21 | **Last Updated:** 2026-09-21
 > **Author:** Antigravity | **Branch:** feature/3d-solar-system
 
 ---
@@ -122,8 +123,8 @@ cargo test --all
 ## 📝 5. Deviations & Retrospective (Post-Implementation)
 
 ### 5.1 Architectural Deviations
-- *[None logged during drafting. Update during/after implementation.]*
+- Used standard 3D Keplerian rotation matrices rather than patching a Z-axis into the 2D logic. This fully aligned with Invariant 3 (f64 determinism) without triggering numerical drift.
 
 ### 5.2 Lessons Learned & Follow-Up Tasks
-- *[None logged during drafting. Update during/after implementation.]*
+- The migration to a full 3D coordinate space requires future iterations to implement a generalized 3D orbital transfer solver (e.g., 3D Lambert solver), breaking the previous 2D assumptions. This should be addressed in subsequent planning phases.
 
