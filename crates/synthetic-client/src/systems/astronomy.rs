@@ -406,8 +406,41 @@ pub fn update_floating_origin_transforms(
     }
 }
 
+/// Updates the focused celestial body, synchronizing floating origin and camera distance.
+///
+/// Returns true if the focus successfully changed to a new body index.
+#[allow(clippy::cast_possible_truncation)]
+pub fn focus_on_body(
+    index: usize,
+    origin: &mut FloatingOrigin,
+    body_query: &Query<&CelestialBody>,
+    camera_query: &mut Query<&mut GlobeOrbitCamera>,
+) -> bool {
+    let total = origin.body_names.len();
+    if index >= total || index == origin.focused_index {
+        return false;
+    }
+
+    origin.focused_index = index;
+    origin.focused_name = origin.body_names[index].clone();
+
+    for body in body_query {
+        if body.index == index {
+            origin.focused_position = body.global_position;
+            // Scale camera target distance comfortably to the new body radius
+            if let Ok(mut cam) = camera_query.get_single_mut() {
+                let rad = body.config.radius_m as f32;
+                cam.target_distance = (rad * 200.0).clamp(cam.min_distance, cam.max_distance);
+            }
+            return true;
+        }
+    }
+
+    true
+}
+
 /// Keyboard shortcuts to cycle or jump celestial focus (Tab, Shift-Tab, 1-9).
-#[allow(clippy::needless_pass_by_value, clippy::cast_possible_truncation)]
+#[allow(clippy::needless_pass_by_value)]
 pub fn solar_system_camera_focus_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut origin: ResMut<FloatingOrigin>,
@@ -453,23 +486,7 @@ pub fn solar_system_camera_focus_system(
     }
 
     if let Some(idx) = new_index {
-        if idx != origin.focused_index {
-            origin.focused_index = idx;
-            let target_name = origin.body_names[idx].clone();
-            origin.focused_name = target_name;
-
-            for body in &body_query {
-                if body.index == idx {
-                    origin.focused_position = body.global_position;
-                    // Scale camera target distance comfortably to the new body radius
-                    if let Ok(mut cam) = camera_query.get_single_mut() {
-                        let rad = body.config.radius_m as f32;
-                        cam.target_distance = (rad * 200.0).clamp(cam.min_distance, cam.max_distance);
-                    }
-                    break;
-                }
-            }
-        }
+        focus_on_body(idx, &mut origin, &body_query, &mut camera_query);
     }
 }
 
@@ -679,5 +696,29 @@ mod tests {
         // Distant Earth from Sun focus (1.5e11 m) -> smaller than dot radius (6.0 px)
         let r_distant = calculate_screen_radius_px(6.371e6, 1.5e11, fov, win_h);
         assert!(r_distant < ASTRO_DOT_RADIUS_PX);
+    }
+
+    #[test]
+    fn test_focus_on_body_boundary() {
+        #[allow(clippy::needless_pass_by_value)]
+        fn test_system(
+            mut origin: ResMut<FloatingOrigin>,
+            body_query: Query<&CelestialBody>,
+            mut camera_query: Query<&mut GlobeOrbitCamera>,
+        ) {
+            assert!(!focus_on_body(0, &mut origin, &body_query, &mut camera_query));
+            assert!(!focus_on_body(5, &mut origin, &body_query, &mut camera_query));
+        }
+
+        let mut app = App::new();
+        app.insert_resource(FloatingOrigin {
+            focused_index: 0,
+            focused_name: "Sun".to_string(),
+            focused_position: GlobalPosition::ZERO,
+            body_names: vec!["Sun".to_string(), "Earth".to_string()],
+        });
+
+        app.add_systems(Update, test_system);
+        app.update();
     }
 }

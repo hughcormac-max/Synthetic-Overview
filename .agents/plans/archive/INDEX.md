@@ -36,6 +36,7 @@ Archived plans are categorized by year under `.agents/plans/archive/YYYY/PLAN-XX
 | [PLAN-012](2026/PLAN-012.md) | Scaffold Initial Solar System & Surface Nodes | `completed` | Antigravity | 2026-09-20 | 2026-09-20 | [2026/PLAN-012.md](2026/PLAN-012.md) |
 | [PLAN-013](2026/PLAN-013.md) | Switch Surface Topography to Spherical Fibonacci Lattice | `completed` | Antigravity | 2026-09-20 | 2026-09-20 | [2026/PLAN-013.md](2026/PLAN-013.md) |
 | [PLAN-014](2026/PLAN-014.md) | Solar System Viewer: Astrodynamics Positioning & Semantic Zoom | `completed` | Antigravity | 2026-09-20 | 2026-09-20 | [2026/PLAN-014.md](2026/PLAN-014.md) |
+| [PLAN-015](2026/PLAN-015.md) | Solar System Ecliptic Orientation Widget and Astrobody Selector | `completed` | Antigravity | 2026-09-21 | 2026-09-21 | [2026/PLAN-015.md](2026/PLAN-015.md) |
 
 ---
 
