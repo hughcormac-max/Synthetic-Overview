@@ -13,8 +13,10 @@ pub struct AstroNodeConfig {
     pub radius_m: f64,
     pub semi_major_axis_m: f64,
     pub eccentricity: f64,
+    pub inclination_rad: f64,
+    pub longitude_of_ascending_node_rad: f64,
+    pub argument_of_periapsis_rad: f64,
     pub true_anomaly_epoch_rad: f64,
-    pub longitude_of_periapsis_rad: f64,
     pub mean_motion_rad_s: f64,
 }
 

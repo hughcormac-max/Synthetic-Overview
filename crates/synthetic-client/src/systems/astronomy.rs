@@ -196,13 +196,22 @@ fn create_billboard_quad_mesh() -> Mesh {
 pub fn create_orbit_curve_mesh(
     semi_major_axis_m: f64,
     eccentricity: f64,
-    longitude_of_periapsis_rad: f64,
+    inclination_rad: f64,
+    longitude_of_ascending_node_rad: f64,
+    argument_of_periapsis_rad: f64,
 ) -> Mesh {
     let two_pi = std::f64::consts::TAU;
     let step_rad = two_pi / (ORBIT_SEGMENTS as f64);
     let e = eccentricity.clamp(0.0, 0.999_999);
     let a = semi_major_axis_m;
-    let varpi = longitude_of_periapsis_rad;
+    let i_rad = inclination_rad;
+    let omega_upper = longitude_of_ascending_node_rad;
+    let omega_lower = argument_of_periapsis_rad;
+
+    let cos_omega_upper = omega_upper.cos();
+    let sin_omega_upper = omega_upper.sin();
+    let cos_i = i_rad.cos();
+    let sin_i = i_rad.sin();
 
     let mut positions = Vec::with_capacity(ORBIT_SEGMENTS + 1);
     let mut normals = Vec::with_capacity(ORBIT_SEGMENTS + 1);
@@ -210,10 +219,13 @@ pub fn create_orbit_curve_mesh(
     for i in 0..=ORBIT_SEGMENTS {
         let nu = (i % ORBIT_SEGMENTS) as f64 * step_rad;
         let r = a * (1.0 - e * e) / (1.0 + e * nu.cos());
-        let angle = nu + varpi;
-        let x = (r * angle.cos()) as f32;
-        let y = (r * angle.sin()) as f32;
-        let z = 0.0_f32;
+        
+        let cos_omega_nu = (omega_lower + nu).cos();
+        let sin_omega_nu = (omega_lower + nu).sin();
+        
+        let x = (r * (cos_omega_upper * cos_omega_nu - sin_omega_upper * sin_omega_nu * cos_i)) as f32;
+        let y = (r * (sin_omega_upper * cos_omega_nu + cos_omega_upper * sin_omega_nu * cos_i)) as f32;
+        let z = (r * (sin_i * sin_omega_nu)) as f32;
 
         positions.push([x, y, z]);
         normals.push([0.0, 0.0, 1.0]);
@@ -366,7 +378,9 @@ pub fn setup_solar_system(
                     let orbit_mesh = meshes.add(create_orbit_curve_mesh(
                         config.semi_major_axis_m,
                         config.eccentricity,
-                        config.longitude_of_periapsis_rad,
+                        config.inclination_rad,
+                        config.longitude_of_ascending_node_rad,
+                        config.argument_of_periapsis_rad,
                     ));
                     let orbit_entity = commands
                         .spawn((
@@ -568,8 +582,10 @@ mod tests {
                 radius_m: 6.9634e8,
                 semi_major_axis_m: 0.0,
                 eccentricity: 0.0,
+                inclination_rad: 0.0,
+                longitude_of_ascending_node_rad: 0.0,
+                argument_of_periapsis_rad: 0.0,
                 true_anomaly_epoch_rad: 0.0,
-                longitude_of_periapsis_rad: 0.0,
                 mean_motion_rad_s: 0.0,
             },
             AstroNodeConfig {
@@ -579,8 +595,10 @@ mod tests {
                 radius_m: 6.371e6,
                 semi_major_axis_m: 1.495_978_7e11,
                 eccentricity: 0.0,
+                inclination_rad: 0.0,
+                longitude_of_ascending_node_rad: 0.0,
+                argument_of_periapsis_rad: 0.0,
                 true_anomaly_epoch_rad: 0.0,
-                longitude_of_periapsis_rad: 0.0,
                 mean_motion_rad_s: 1.991e-7,
             },
             AstroNodeConfig {
@@ -590,8 +608,10 @@ mod tests {
                 radius_m: 1.7374e6,
                 semi_major_axis_m: 3.844e8,
                 eccentricity: 0.0,
+                inclination_rad: 0.0,
+                longitude_of_ascending_node_rad: 0.0,
+                argument_of_periapsis_rad: 0.0,
                 true_anomaly_epoch_rad: 0.0,
-                longitude_of_periapsis_rad: 0.0,
                 mean_motion_rad_s: 2.662e-6,
             },
         ];
@@ -655,8 +675,7 @@ mod tests {
     fn test_create_orbit_curve_mesh() {
         let a = 1.0e11;
         let e = 0.1;
-        let varpi = 0.0;
-        let mesh = create_orbit_curve_mesh(a, e, varpi);
+        let mesh = create_orbit_curve_mesh(a, e, 0.0, 0.0, 0.0);
         assert_eq!(mesh.primitive_topology(), PrimitiveTopology::LineStrip);
         let positions = mesh
             .attribute(Mesh::ATTRIBUTE_POSITION)

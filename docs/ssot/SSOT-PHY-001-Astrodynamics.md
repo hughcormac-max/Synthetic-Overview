@@ -26,7 +26,7 @@ sources:
 ### 1.1 Purpose & Scope
 
 This specification defines the deterministic spatial topology and orbital mechanics of interplanetary space, celestial trajectories, and vessel propulsion dynamics:
-1. **Unified 3D Coordinate Space with 2D Coplanar Astrodynamics:** Major celestial bodies (`Astronodes`) and interplanetary vessels are tracked in a unified `f64` 3D Cartesian space `(x, y, z)`. However, to preserve AI pathfinding efficiency, all interplanetary orbits are strictly constrained to the 2D ecliptic plane (`z = 0`). Body positions are computed directly as closed-form functions of the simulation tick `t` without numerical N-body integration drift.
+1. **Unified 3D Coordinate Space with 3D Astrodynamics:** Major celestial bodies (`Astronodes`) and interplanetary vessels are tracked in a unified `f64` 3D Cartesian space `(x, y, z)`. However, to preserve AI pathfinding efficiency, all interplanetary orbits are strictly constrained to the 2D ecliptic plane (`z = 0`). Body positions are computed directly as closed-form functions of the simulation tick `t` without numerical N-body integration drift.
 2. **Propulsion Dynamics & Delta-V:** Vessel velocity changes, propellant consumption, thrust generation, and burn durations follow the exact Tsiolkovsky rocket equation grounded in standard `f64` SI units.
 3. **Orbital Transfers & Patched Conics:** Interplanetary navigation uses patched conics based on Laplace Spheres of Influence (SOI). Inside an Astronode's SOI, celestial gravity dominates; outside, the Sun's heliocentric gravity dominates.
 
@@ -44,7 +44,7 @@ Local planetary surface coordinates, Fibonacci lattices, and surface node struct
 
 ## 📐 2. Deterministic Formulas & Calculation Rules
 
-### 2.1 2D Coplanar Heliocentric Kinematics
+### 2.1 3D Heliocentric Kinematics
 
 For each `Astronode` `k` orbiting a parent with standard gravitational parameter `mu` (in `m^3 / s^2`), semi-major axis `a_k` (in `m`), and orbital period `P_k` (in simulation ticks):
 

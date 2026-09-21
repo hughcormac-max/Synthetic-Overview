@@ -1,4 +1,4 @@
-//! 2D Keplerian orbital kinematics and ephemeris calculations.
+//! 3D Keplerian orbital kinematics and ephemeris calculations.
 //!
 //! Grounded in SSOT-PHY-001 Section 2.1 and SSOT-PHY-004 Section 2.2.
 //! Evaluates closed-form positions for celestial bodies (`AstroNodes`) at tick `t` or epoch `t = 0`.
@@ -9,8 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Global 3D Cartesian position in meters.
 ///
-/// While orbital trajectories are constrained to the ecliptic plane (z = 0.0),
-/// the state representation supports 3D coordinates for surface nodes and spatial queries.
+/// State representation supports full 3D coordinates.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct GlobalPosition {
     pub x: f64,
@@ -83,15 +82,26 @@ pub fn calculate_kepler_position(
     let true_anomaly = 2.0 * ((1.0 + e).sqrt() * sin_half_e).atan2((1.0 - e).sqrt() * cos_half_e);
 
     let radius = config.semi_major_axis_m * (1.0 - e * eccentric_anomaly.cos());
-    let angle = true_anomaly + config.longitude_of_periapsis_rad;
+    
+    let i = config.inclination_rad;
+    let omega_upper = config.longitude_of_ascending_node_rad;
+    let omega_lower = config.argument_of_periapsis_rad;
 
-    let x_rel = radius * angle.cos();
-    let y_rel = radius * angle.sin();
+    let cos_omega_upper = omega_upper.cos();
+    let sin_omega_upper = omega_upper.sin();
+    let cos_omega_nu = (omega_lower + true_anomaly).cos();
+    let sin_omega_nu = (omega_lower + true_anomaly).sin();
+    let cos_i = i.cos();
+    let sin_i = i.sin();
+
+    let x_rel = radius * (cos_omega_upper * cos_omega_nu - sin_omega_upper * sin_omega_nu * cos_i);
+    let y_rel = radius * (sin_omega_upper * cos_omega_nu + cos_omega_upper * sin_omega_nu * cos_i);
+    let z_rel = radius * (sin_i * sin_omega_nu);
 
     GlobalPosition {
         x: parent_pos.x + x_rel,
         y: parent_pos.y + y_rel,
-        z: parent_pos.z,
+        z: parent_pos.z + z_rel,
     }
 }
 
@@ -120,7 +130,9 @@ mod tests {
             semi_major_axis_m: 1.495_978_7e11,
             eccentricity: 0.0,
             true_anomaly_epoch_rad: 0.0,
-            longitude_of_periapsis_rad: 0.0,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
             mean_motion_rad_s: 1.991e-7,
         };
 
@@ -143,7 +155,9 @@ mod tests {
             semi_major_axis_m: 1.495_978_7e11,
             eccentricity: 0.0,
             true_anomaly_epoch_rad: 0.0,
-            longitude_of_periapsis_rad: 0.0,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
             mean_motion_rad_s: mean_motion,
         };
 
@@ -169,7 +183,9 @@ mod tests {
             semi_major_axis_m: 3.844e8,
             eccentricity: 0.0,
             true_anomaly_epoch_rad: 0.0,
-            longitude_of_periapsis_rad: 0.0,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
             mean_motion_rad_s: 2.662e-6,
         };
 
@@ -189,11 +205,35 @@ mod tests {
             semi_major_axis_m: 0.0,
             eccentricity: 0.0,
             true_anomaly_epoch_rad: 0.0,
-            longitude_of_periapsis_rad: 0.0,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
             mean_motion_rad_s: 0.0,
         };
 
         let sun_pos = calculate_epoch_position(&sun_config, GlobalPosition::ZERO);
         assert_eq!(sun_pos, GlobalPosition::ZERO);
+    }
+
+    #[test]
+    fn test_3d_inclined_orbit() {
+        let inclined_config = AstroNodeConfig {
+            name: "Inclined".into(),
+            parent_name: Some("Sun".into()),
+            mass_kg: 1e20,
+            radius_m: 1e5,
+            semi_major_axis_m: 1e10,
+            eccentricity: 0.0,
+            inclination_rad: std::f64::consts::PI / 2.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
+            true_anomaly_epoch_rad: std::f64::consts::PI / 2.0,
+            mean_motion_rad_s: 1.0,
+        };
+
+        let pos = calculate_epoch_position(&inclined_config, GlobalPosition::ZERO);
+        assert!(pos.x.abs() < 1.0);
+        assert!(pos.y.abs() < 1.0);
+        assert!((pos.z - 1e10).abs() < 1.0);
     }
 }

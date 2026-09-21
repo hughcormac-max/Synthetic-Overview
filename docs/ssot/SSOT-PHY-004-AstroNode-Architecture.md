@@ -27,13 +27,13 @@ sources:
 
 This specification defines the authoritative architecture of celestial bodies (`AstroNodes`) and their discrete, interactable surface locations (`SurfaceNodes`):
 1. **AstroNode Definition.** Every astronomical body (star, planet, moon, asteroid, comet) is defined as an `AstroNode`.
-2. **2D Keplerian Orbits.** The solar system simulation is strictly 3D, but all planetary orbits are coplanar. Thus, `AstroNode` positions are derived using 2D Keplerian elements relative to their parent body.
+2. **3D Keplerian Orbits.** The solar system simulation is strictly 3D, and planetary orbits are fully 3D. `AstroNode` positions are derived using 3D Keplerian elements relative to their parent body.
 3. **Spherical Fibonacci Lattice.** Surface interaction points (`SurfaceNodes`) are distributed across the sphere using a deterministic spherical Fibonacci spiral algorithm based on the golden ratio angle, guaranteeing uniform equal-area coverage without polar clustering.
 4. **Viable Entity Locations.** `SurfaceNodes` are the only valid locations for entities, structures, or landed vessels on a celestial body.
 
 ### 1.2 Core Domain Invariants
 
-- **Invariant 1 (Strict Coplanar Orbit).** All `AstroNode` orbits are strictly 2D and coplanar. The `z` or inclination coordinate for any macroscopic orbit is exactly `0.0`.
+- **Invariant 1 (3D Orbital Support).** All `AstroNode` orbits fully support 3D Keplerian mechanics. Inclination and longitude of the ascending node are fully integrated.
 - **Invariant 2 (Radius-Proportional Allocation).** The total number of `SurfaceNodes` on an `AstroNode` may be allocated via explicit count or derived proportionally from physical radius `R_m` and density factor `K_density`.
 - **Invariant 3 (Spherical Fibonacci Distribution).** `SurfaceNodes` on any spherical body must be generated strictly via the deterministic spherical Fibonacci spiral lattice. Random sampling, geodesic Voronoi meshes, and hierarchical hexagonal grids (such as Uber H3) are prohibited.
 - **Invariant 4 (Exclusive Occupancy).** Macroscopic surface entities and landed vessels may only exist precisely at the discrete `(X_local, Y_local, Z_local)` coordinates of a generated `SurfaceNode`. Arbitrary surface coordinate parking is forbidden.
@@ -58,7 +58,7 @@ An `AstroNode` requires the following defining parameters:
 | `varpi` | Longitude of periapsis | Radians (`rad`) |
 | `n` | Mean motion | Radians/second (`rad/s`) |
 
-### 2.2 2D Coplanar Keplerian Position
+### 2.2 3D Keplerian Position
 
 To find the global Cartesian coordinates `(X_global, Y_global, Z_global)` of an `AstroNode` at time `T` (seconds since epoch):
 
@@ -74,15 +74,16 @@ To find the global Cartesian coordinates `(X_global, Y_global, Z_global)` of an 
 - **Orbital Radius (`r`).**
   `r = a * (1.0 - e * cos(E))`
 
-- **Parent-Relative 2D Position.**
-  `X_rel = r * cos(nu + varpi)`
-  `Y_rel = r * sin(nu + varpi)`
-  `Z_rel = 0.0`
+- **Parent-Relative 3D Position.**
+  Let `i` = inclination, `Omega` = longitude of ascending node, `omega` = argument of periapsis.
+  `X_rel = r * (cos(Omega) * cos(omega + nu) - sin(Omega) * sin(omega + nu) * cos(i))`
+  `Y_rel = r * (sin(Omega) * cos(omega + nu) + cos(Omega) * sin(omega + nu) * cos(i))`
+  `Z_rel = r * (sin(i) * sin(omega + nu))`
 
 - **Global 3D Position.**
   `X_global = X_parent + X_rel`
   `Y_global = Y_parent + Y_rel`
-  `Z_global = Z_parent + 0.0`
+  `Z_global = Z_parent + Z_rel`
 
 ### 2.3 Spherical Fibonacci Surface Lattice
 
@@ -145,7 +146,6 @@ When a descending vessel crosses the `AstroNode` Karman line, it must target a v
 
 ## ⚠️ 4. Known Hallucination Traps & Anti-Patterns
 
-- **Trap 1 (3D Orbital Inclination).** Hallucinating full 3D Keplerian mechanics (inclination `i`, right ascension of ascending node `Omega`). This simulation strictly enforces a 2D coplanar macroscopic orbital space (`Z_rel = 0.0`).
 - **Trap 2 (Hierarchical Hex Grids / H3 / Voronoi).** Attempting to generate planetary grids using Uber H3 or random Voronoi diagrams. Planetary surface nodes must strictly use the **Spherical Fibonacci Lattice**, which guarantees uniform node spacing with zero pentagonal defects.
 - **Trap 3 (Continuous Surface Parking).** Allowing a vessel to land at any arbitrary latitude/longitude. Entities can only exist at defined `SurfaceNodes`.
 - **Trap 4 (Zero-LaTeX Notation).** Writing equations with LaTeX tags (`$`, `$$`, `\dot`). Adhere strictly to ASCII plain text.
