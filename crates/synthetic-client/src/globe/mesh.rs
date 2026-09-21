@@ -2,12 +2,15 @@ use bevy::prelude::*;
 use bevy::render::mesh::PrimitiveTopology;
 use bevy::render::render_asset::RenderAssetUsages;
 
+#[allow(dead_code)]
 const GOLDEN_RATIO: f32 = 1.618_034;
+#[allow(dead_code)]
 const TWO_PI: f32 = std::f32::consts::TAU;
+#[allow(dead_code)]
 const GOLDEN_ANGLE: f32 = TWO_PI * (1.0 - 1.0 / GOLDEN_RATIO);
 
 /// Generates a spherical point-list mesh using the SSOT-PHY-004 Fibonacci spiral
-#[allow(clippy::cast_precision_loss)]
+#[allow(dead_code, clippy::cast_precision_loss)]
 pub fn generate_fibonacci_globe_mesh(node_count: usize, radius: f32) -> Mesh {
     let mut positions: Vec<[f32; 3]> = Vec::with_capacity(node_count);
     let mut normals: Vec<[f32; 3]> = Vec::with_capacity(node_count);

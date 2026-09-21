@@ -67,20 +67,19 @@ mod tests {
     fn test_vec_top_01_north_pole_apex() {
         let nodes = generate_fibonacci_surface_nodes(6_371_000.0, 10_000);
         assert_eq!(nodes.len(), 10_000);
-        let node0 = &nodes[0];
+        let first_node = &nodes[0];
         assert!(
-            (node0.local_z - 6_370_362.9).abs() <= 1.0,
+            (first_node.local_z - 6_370_362.9).abs() <= 1.0,
             "Expected local_z near 6370362.9, got {}",
-            node0.local_z
+            first_node.local_z
         );
-        let r = (node0.local_x * node0.local_x
-            + node0.local_y * node0.local_y
-            + node0.local_z * node0.local_z)
+        let r = (first_node.local_x * first_node.local_x
+            + first_node.local_y * first_node.local_y
+            + first_node.local_z * first_node.local_z)
             .sqrt();
         assert!(
             (r - 6_371_000.0).abs() <= 1.0,
-            "Radius violation at apex: {}",
-            r
+            "Radius violation at apex: {r}"
         );
     }
 
@@ -99,8 +98,7 @@ mod tests {
             .sqrt();
         assert!(
             (r - 6_371_000.0).abs() <= 1.0,
-            "Radius violation at south apex: {}",
-            r
+            "Radius violation at south apex: {r}"
         );
     }
 
@@ -114,8 +112,7 @@ mod tests {
             .sqrt();
         assert!(
             (r - 6_371_000.0).abs() <= 1.0,
-            "Radius violation near equator: {}",
-            r
+            "Radius violation near equator: {r}"
         );
     }
 
@@ -124,8 +121,7 @@ mod tests {
         let phi_1 = (1.0 * GOLDEN_ANGLE_RAD).rem_euclid(2.0 * std::f64::consts::PI);
         assert!(
             (phi_1 - 2.399_963).abs() < 0.0001,
-            "Expected phi_1 approx 2.399963 rad, got {}",
-            phi_1
+            "Expected phi_1 approx 2.399963 rad, got {phi_1}"
         );
     }
 

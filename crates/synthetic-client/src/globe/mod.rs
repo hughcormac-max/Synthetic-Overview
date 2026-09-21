@@ -6,24 +6,20 @@ pub mod viewport;
 use bevy::prelude::*;
 use bevy::render::camera::ClearColorConfig;
 use camera::{orbit_camera_input_system, orbit_camera_transform_system, GlobeOrbitCamera};
-use material::GlobeMaterial;
-use mesh::generate_fibonacci_globe_mesh;
+use material::{GlobeMaterial, OrbitMaterial};
 use viewport::{sync_globe_viewport, GlobeCameraMarker};
-
-#[derive(Component)]
-pub struct GlobeMarker;
 
 pub struct GlobePlugin;
 
 impl Plugin for GlobePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<GlobeMaterial>::default())
-            .add_systems(Startup, setup_globe_scene)
+            .add_plugins(MaterialPlugin::<OrbitMaterial>::default())
+            .add_systems(Startup, setup_solar_system_camera)
             .add_systems(
                 Update,
                 (
                     sync_globe_viewport,
-                    rotate_globe,
                     orbit_camera_input_system,
                     orbit_camera_transform_system,
                 ),
@@ -31,40 +27,40 @@ impl Plugin for GlobePlugin {
     }
 }
 
-fn setup_globe_scene(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<GlobeMaterial>>,
-) {
+fn setup_solar_system_camera(mut commands: Commands) {
+    // 3.0 degrees FOV (~0.05236 rad) perspective projection
+    let fov_three_deg = 3.0 * std::f32::consts::PI / 180.0;
+
+    let initial_distance = 1.2e9_f32;
+    let initial_pitch = 0.6_f32;
+    let initial_yaw = 0.0_f32;
+    let init_x = initial_distance * initial_pitch.cos() * initial_yaw.cos();
+    let init_y = initial_distance * initial_pitch.cos() * initial_yaw.sin();
+    let init_z = initial_distance * initial_pitch.sin();
+
     commands.spawn((
         Camera3d::default(),
         Camera {
             order: 0,
-            clear_color: ClearColorConfig::Custom(Color::srgb(0.08, 0.08, 0.10)),
+            clear_color: ClearColorConfig::Custom(Color::srgb(0.04, 0.04, 0.06)),
+            viewport: None,
             ..default()
         },
-        Transform::from_xyz(0.0, 0.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Projection::Perspective(PerspectiveProjection {
+            fov: fov_three_deg,
+            near: 10.0,
+            far: 1e15,
+            ..default()
+        }),
+        Transform::from_xyz(init_x, init_y, init_z).looking_at(Vec3::ZERO, Vec3::Z),
         GlobeCameraMarker,
-        GlobeOrbitCamera::default(),
+        GlobeOrbitCamera {
+            distance: initial_distance,
+            target_distance: initial_distance,
+            min_distance: 100.0,
+            max_distance: 1e14,
+            zoom_sensitivity: 0.25,
+            ..default()
+        },
     ));
-
-    let globe_mesh = generate_fibonacci_globe_mesh(10_000, 1.5);
-    let globe_material = GlobeMaterial {
-        base_color: LinearRgba::new(0.3, 0.75, 1.0, 1.0),
-        atmosphere_color: LinearRgba::new(0.1, 0.4, 0.8, 1.0),
-    };
-
-    commands.spawn((
-        Mesh3d(meshes.add(globe_mesh)),
-        MeshMaterial3d(materials.add(globe_material)),
-        Transform::IDENTITY,
-        GlobeMarker,
-    ));
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn rotate_globe(time: Res<Time>, mut query: Query<&mut Transform, With<GlobeMarker>>) {
-    for mut transform in &mut query {
-        transform.rotate_y(0.05 * time.delta_secs());
-    }
 }

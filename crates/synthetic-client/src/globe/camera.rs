@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use super::viewport::MainViewPanelMarker;
 
-pub const DEFAULT_PITCH_LIMIT: f32 = 1.48;
+pub const DEFAULT_PITCH_LIMIT: f32 = 1.54;
 
 /// Orbit camera component for planetary 3D navigation.
 #[derive(Component, Debug, Clone)]
@@ -14,9 +14,9 @@ pub struct GlobeOrbitCamera {
     pub distance: f32,
     /// Target radial distance for smooth damping.
     pub target_distance: f32,
-    /// Current yaw angle (radians around Y-axis).
+    /// Current yaw angle (radians around Z-axis).
     pub yaw: f32,
-    /// Current pitch angle (radians elevation from XZ plane).
+    /// Current pitch angle (radians elevation from XY plane).
     pub pitch: f32,
     /// Target pitch angle for smooth damping.
     pub target_pitch: f32,
@@ -43,9 +43,9 @@ impl Default for GlobeOrbitCamera {
             distance: 4.0,
             target_distance: 4.0,
             yaw: 0.0,
-            pitch: 0.2,
+            pitch: 0.6,
             target_yaw: 0.0,
-            target_pitch: 0.2,
+            target_pitch: 0.6,
             min_distance: 1.8,
             max_distance: 12.0,
             rotate_sensitivity: 0.005,
@@ -90,7 +90,11 @@ pub fn orbit_camera_input_system(
             .unwrap_or(false);
         interaction_hovered || rect_hovered
     } else {
-        false
+        window_query
+            .get_single()
+            .ok()
+            .and_then(Window::cursor_position)
+            .is_some()
     };
 
     let mut motion_delta = Vec2::ZERO;
@@ -116,9 +120,9 @@ pub fn orbit_camera_input_system(
 
         if camera.is_dragging && motion_delta != Vec2::ZERO {
             camera.target_yaw += -motion_delta.x * camera.rotate_sensitivity;
-            camera.target_pitch += motion_delta.y * camera.rotate_sensitivity;
-            camera.target_pitch =
-                camera.target_pitch.clamp(-DEFAULT_PITCH_LIMIT, DEFAULT_PITCH_LIMIT);
+            camera.target_pitch = (camera.target_pitch
+                - motion_delta.y * camera.rotate_sensitivity)
+                .clamp(-DEFAULT_PITCH_LIMIT, DEFAULT_PITCH_LIMIT);
         }
 
         if (is_hovered || camera.is_dragging) && scroll_y.abs() > f32::EPSILON {
@@ -143,12 +147,17 @@ pub fn orbit_camera_transform_system(
         camera.yaw += (camera.target_yaw - camera.yaw) * blend;
         camera.pitch += (camera.target_pitch - camera.pitch) * blend;
 
-        let x = camera.focus.x + camera.distance * camera.pitch.cos() * camera.yaw.sin();
-        let y = camera.focus.y + camera.distance * camera.pitch.sin();
-        let z = camera.focus.z + camera.distance * camera.pitch.cos() * camera.yaw.cos();
+        let cos_pitch = camera.pitch.cos();
+        let sin_pitch = camera.pitch.sin();
+        let cos_yaw = camera.yaw.cos();
+        let sin_yaw = camera.yaw.sin();
+
+        let x = camera.focus.x + camera.distance * cos_pitch * cos_yaw;
+        let y = camera.focus.y + camera.distance * cos_pitch * sin_yaw;
+        let z = camera.focus.z + camera.distance * sin_pitch;
 
         transform.translation = Vec3::new(x, y, z);
-        transform.look_at(camera.focus, Vec3::Y);
+        transform.look_at(camera.focus, Vec3::Z);
     }
 }
 
@@ -162,21 +171,62 @@ mod tests {
         assert_eq!(cam.focus, Vec3::ZERO);
         assert!((cam.distance - 4.0).abs() < f32::EPSILON);
         assert!((cam.target_distance - 4.0).abs() < f32::EPSILON);
-        assert!((cam.pitch - 0.2).abs() < f32::EPSILON);
+        assert!((cam.pitch - 0.6).abs() < f32::EPSILON);
+        assert!((cam.target_pitch - 0.6).abs() < f32::EPSILON);
         assert!((cam.yaw - 0.0).abs() < f32::EPSILON);
+        assert!((cam.target_yaw - 0.0).abs() < f32::EPSILON);
         assert!(!cam.is_dragging);
     }
 
     #[test]
     fn test_spherical_to_cartesian() {
-        let distance = 4.0;
+        let distance = 4.0_f32;
         let pitch = 0.0_f32;
         let yaw = 0.0_f32;
-        let x = distance * pitch.cos() * yaw.sin();
-        let y = distance * pitch.sin();
-        let z = distance * pitch.cos() * yaw.cos();
-        assert!((x - 0.0).abs() < 1e-5);
+        let cos_pitch = pitch.cos();
+        let sin_pitch = pitch.sin();
+        let cos_yaw = yaw.cos();
+        let sin_yaw = yaw.sin();
+        let x = distance * cos_pitch * cos_yaw;
+        let y = distance * cos_pitch * sin_yaw;
+        let z = distance * sin_pitch;
+        assert!((x - 4.0).abs() < 1e-5);
         assert!((y - 0.0).abs() < 1e-5);
-        assert!((z - 4.0).abs() < 1e-5);
+        assert!((z - 0.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_camera_zero_roll() {
+        let test_angles = [
+            (0.0_f32, 0.0_f32),
+            (0.6, 0.0),
+            (-0.6, 0.0),
+            (0.6, 1.2),
+            (-1.0, -2.5),
+            (DEFAULT_PITCH_LIMIT, 3.0),
+            (-DEFAULT_PITCH_LIMIT, -3.0),
+        ];
+
+        for (pitch, yaw) in test_angles {
+            let focus = Vec3::ZERO;
+            let distance = 100.0_f32;
+            let cos_pitch = pitch.cos();
+            let sin_pitch = pitch.sin();
+            let cos_yaw = yaw.cos();
+            let sin_yaw = yaw.sin();
+
+            let x = focus.x + distance * cos_pitch * cos_yaw;
+            let y = focus.y + distance * cos_pitch * sin_yaw;
+            let z = focus.z + distance * sin_pitch;
+
+            let mut transform = Transform::from_xyz(x, y, z);
+            transform.look_at(focus, Vec3::Z);
+
+            assert!(
+                transform.right().z.abs() < 1e-5,
+                "Camera roll is non-zero at pitch {pitch}, yaw {yaw}: right vector is {:?}",
+                transform.right()
+            );
+        }
     }
 }

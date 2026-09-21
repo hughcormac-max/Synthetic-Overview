@@ -35,3 +35,62 @@ impl Material for GlobeMaterial {
     }
 }
 
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+pub struct AstroDotMaterial {
+    #[uniform(0)]
+    pub color: LinearRgba,
+    #[uniform(0)]
+    pub size_px: f32,
+}
+
+impl Material for AstroDotMaterial {
+    fn vertex_shader() -> ShaderRef {
+        "shaders/astro_dot.wgsl".into()
+    }
+
+    fn fragment_shader() -> ShaderRef {
+        "shaders/astro_dot.wgsl".into()
+    }
+
+    fn specialize(
+        _pipeline: &MaterialPipeline<Self>,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        descriptor.primitive.topology = PrimitiveTopology::TriangleList;
+        descriptor.primitive.cull_mode = None;
+        Ok(())
+    }
+}
+
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+pub struct OrbitMaterial {
+    #[uniform(0)]
+    pub color: LinearRgba,
+}
+
+impl Material for OrbitMaterial {
+    fn vertex_shader() -> ShaderRef {
+        "shaders/orbit_curve.wgsl".into()
+    }
+
+    fn fragment_shader() -> ShaderRef {
+        "shaders/orbit_curve.wgsl".into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode {
+        AlphaMode::Blend
+    }
+
+    fn specialize(
+        _pipeline: &MaterialPipeline<Self>,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        descriptor.primitive.topology = PrimitiveTopology::LineStrip;
+        descriptor.primitive.cull_mode = None;
+        Ok(())
+    }
+}

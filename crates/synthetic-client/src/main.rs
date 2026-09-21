@@ -1,20 +1,18 @@
 mod globe;
 mod systems;
 
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::camera::ClearColorConfig;
 use globe::viewport::MainViewPanelMarker;
 use globe::GlobePlugin;
 use systems::AstronomyPlugin;
 
-const BORDER_COLOR: Color = Color::srgb(0.22, 0.24, 0.28);
-const TEXT_COLOR: Color = Color::srgb(0.85, 0.88, 0.92);
-const SIDEBAR_BG: Color = Color::srgb(0.12, 0.12, 0.14);
-const MAIN_VIEW_BG: Color = Color::NONE; // Transparent so underlying 3D globe camera shows through
-const BOTTOM_BAR_BG: Color = Color::srgb(0.14, 0.14, 0.16);
-
 #[derive(Component)]
 pub struct UiCameraMarker;
+
+#[derive(Component)]
+struct FpsText;
 
 fn main() {
     App::new()
@@ -25,107 +23,12 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(GlobePlugin)
         .add_plugins(AstronomyPlugin)
         .add_systems(Startup, setup_ui)
+        .add_systems(Update, update_fps_text)
         .run();
-}
-
-fn spawn_label(parent: &mut ChildBuilder, text: &str, font_size: f32) {
-    parent.spawn((
-        Text::new(text),
-        TextFont {
-            font_size,
-            ..default()
-        },
-        TextColor(TEXT_COLOR),
-    ));
-}
-
-fn spawn_sidebar(parent: &mut ChildBuilder, title: &str) {
-    parent
-        .spawn((
-            Node {
-                width: Val::Percent(20.0),
-                height: Val::Percent(100.0),
-                border: UiRect::all(Val::Px(1.0)),
-                padding: UiRect::all(Val::Px(10.0)),
-                ..default()
-            },
-            BackgroundColor(SIDEBAR_BG),
-            BorderColor(BORDER_COLOR),
-        ))
-        .with_children(|panel| {
-            spawn_label(panel, title, 14.0);
-        });
-}
-
-fn spawn_main_view_panel(
-    parent: &mut ChildBuilder,
-    title: &str,
-    height_pct: f32,
-    bg: Color,
-    font_size: f32,
-) {
-    parent
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(height_pct),
-                border: UiRect::all(Val::Px(1.0)),
-                padding: UiRect::all(Val::Px(10.0)),
-                ..default()
-            },
-            BackgroundColor(bg),
-            BorderColor(BORDER_COLOR),
-            Interaction::default(),
-            MainViewPanelMarker,
-        ))
-        .with_children(|panel| {
-            spawn_label(panel, title, font_size);
-        });
-}
-
-fn spawn_view_panel(
-    parent: &mut ChildBuilder,
-    title: &str,
-    height_pct: f32,
-    bg: Color,
-    font_size: f32,
-) {
-    parent
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(height_pct),
-                border: UiRect::all(Val::Px(1.0)),
-                padding: UiRect::all(Val::Px(10.0)),
-                ..default()
-            },
-            BackgroundColor(bg),
-            BorderColor(BORDER_COLOR),
-        ))
-        .with_children(|panel| {
-            spawn_label(panel, title, font_size);
-        });
-}
-
-fn spawn_center_column(parent: &mut ChildBuilder) {
-    parent
-        .spawn((
-            Node {
-                width: Val::Percent(60.0),
-                height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
-                flex_grow: 1.0,
-                ..default()
-            },
-            BackgroundColor(Color::NONE),
-        ))
-        .with_children(|center| {
-            spawn_main_view_panel(center, "2: Main View", 70.0, MAIN_VIEW_BG, 16.0);
-            spawn_view_panel(center, "3: Bottom Bar", 30.0, BOTTOM_BAR_BG, 14.0);
-        });
 }
 
 fn setup_ui(mut commands: Commands) {
@@ -141,20 +44,49 @@ fn setup_ui(mut commands: Commands) {
         ))
         .id();
 
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            TargetCamera(ui_camera),
-            BackgroundColor(Color::NONE),
-        ))
-        .with_children(|root| {
-            spawn_sidebar(root, "1: Left Sidebar");
-            spawn_center_column(root);
-            spawn_sidebar(root, "4: Right Sidebar");
-        });
+    // Single full-window UI viewport
+    commands.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            ..default()
+        },
+        TargetCamera(ui_camera),
+        BackgroundColor(Color::NONE),
+        Interaction::default(),
+        MainViewPanelMarker,
+    ));
+
+    // FPS counter in top-right corner
+    commands.spawn((
+        Text::new("FPS: --"),
+        TextFont {
+            font_size: 16.0,
+            ..default()
+        },
+        TextColor(Color::srgb(0.85, 0.85, 0.85)),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(12.0),
+            right: Val::Px(16.0),
+            ..default()
+        },
+        TargetCamera(ui_camera),
+        FpsText,
+    ));
 }
+
+#[allow(clippy::needless_pass_by_value)]
+fn update_fps_text(
+    diagnostics: Res<DiagnosticsStore>,
+    mut query: Query<&mut Text, With<FpsText>>,
+) {
+    for mut text in &mut query {
+        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
+            if let Some(value) = fps.smoothed() {
+                **text = format!("FPS: {value:.0}");
+            }
+        }
+    }
+}
+
