@@ -9,8 +9,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use synthetic_core::astronomy::{
-    calculate_epoch_position, generate_fibonacci_nodes_by_density, AstroNodeConfig, GlobalPosition,
-    SurfaceNode,
+    calculate_epoch_position, calculate_kepler_position, generate_fibonacci_nodes_by_density,
+    AstroNodeConfig, GlobalPosition, SurfaceNode,
 };
 
 use crate::globe::camera::GlobeOrbitCamera;
@@ -28,8 +28,20 @@ pub const ORBIT_LINE_COLOR: LinearRgba = LinearRgba::new(0.25, 0.78, 0.88, 0.35)
 /// Screen radius of the `AstroNode` billboard dot in pixels.
 pub const ASTRO_DOT_RADIUS_PX: f32 = 6.0;
 
-/// Number of discrete line segments used to approximate an orbital ellipse.
-pub const ORBIT_SEGMENTS: usize = 128;
+/// Minimum screen-space pick radius in pixels for celestial body selection.
+pub const MIN_PICK_RADIUS_PX: f32 = 10.0;
+
+/// Maximum cursor displacement in pixels allowed between mouse press and release to register as a click.
+pub const MAX_CLICK_DRAG_DISTANCE_PX: f32 = 5.0;
+
+/// Number of hours into the past and future to project the orbital path.
+pub const ORBIT_DOT_WINDOW_HOURS: i32 = 200;
+
+/// Number of total points in the dot orbital path (past + current + future).
+pub const ORBIT_DOT_COUNT: usize = (ORBIT_DOT_WINDOW_HOURS * 2 + 1) as usize;
+
+/// Number of seconds in a single orbital dot time step.
+pub const ORBIT_DOT_INTERVAL_S: f64 = 3600.0;
 
 #[derive(Component, Debug, Clone)]
 pub struct CelestialBody {
@@ -48,8 +60,49 @@ pub struct SurfaceNodesComponent {
 #[derive(Component, Debug, Clone)]
 pub struct AstroDotMarker;
 
+/// Attached to the child orbit entity rendering the dynamic time-step points.
 #[derive(Component, Debug, Clone)]
-pub struct OrbitCurveMarker;
+#[allow(dead_code)]
+pub struct DynamicOrbitDots {
+    pub mesh_handle: Handle<Mesh>,
+    pub body_entity: Entity,
+}
+
+#[allow(dead_code)]
+impl DynamicOrbitDots {
+    #[must_use]
+    pub const fn new(mesh_handle: Handle<Mesh>, body_entity: Entity) -> Self {
+        Self {
+            mesh_handle,
+            body_entity,
+        }
+    }
+}
+
+/// Current simulation time tracking in seconds elapsed since epoch.
+#[derive(Resource, Debug, Clone, Copy, Default, PartialEq)]
+#[allow(dead_code)]
+pub struct SimulationTime {
+    pub elapsed_seconds: f64,
+}
+
+#[allow(dead_code)]
+impl SimulationTime {
+    #[must_use]
+    pub const fn new(elapsed_seconds: f64) -> Self {
+        Self { elapsed_seconds }
+    }
+}
+
+/// System set for systems that advance or update simulation time.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SimulationTimeSystem;
+
+/// Advances simulation time based on real frame delta time.
+#[allow(clippy::needless_pass_by_value)]
+pub fn advance_simulation_time(time: Res<Time>, mut sim_time: ResMut<SimulationTime>) {
+    sim_time.elapsed_seconds += time.delta_secs_f64();
+}
 
 #[derive(Resource, Debug, Clone)]
 pub struct FloatingOrigin {
@@ -73,11 +126,15 @@ pub struct AstronomyPlugin;
 impl Plugin for AstronomyPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<AstroDotMaterial>::default())
+            .init_resource::<SimulationTime>()
             .add_systems(Startup, setup_solar_system)
             .add_systems(
                 Update,
                 (
+                    advance_simulation_time.in_set(SimulationTimeSystem),
+                    update_orbital_dots_system.after(SimulationTimeSystem),
                     solar_system_camera_focus_system,
+                    mouse_pick_astronode_system,
                     update_floating_origin_transforms,
                     update_surface_node_visibility,
                 ),
@@ -186,56 +243,7 @@ fn create_billboard_quad_mesh() -> Mesh {
     mesh
 }
 
-/// Generates a closed line loop mesh approximating the 2D Keplerian orbit ellipse in the ecliptic plane.
-#[must_use]
-#[allow(
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::many_single_char_names
-)]
-pub fn create_orbit_curve_mesh(
-    semi_major_axis_m: f64,
-    eccentricity: f64,
-    inclination_rad: f64,
-    longitude_of_ascending_node_rad: f64,
-    argument_of_periapsis_rad: f64,
-) -> Mesh {
-    let two_pi = std::f64::consts::TAU;
-    let step_rad = two_pi / (ORBIT_SEGMENTS as f64);
-    let e = eccentricity.clamp(0.0, 0.999_999);
-    let a = semi_major_axis_m;
-    let i_rad = inclination_rad;
-    let omega_upper = longitude_of_ascending_node_rad;
-    let omega_lower = argument_of_periapsis_rad;
 
-    let cos_omega_upper = omega_upper.cos();
-    let sin_omega_upper = omega_upper.sin();
-    let cos_i = i_rad.cos();
-    let sin_i = i_rad.sin();
-
-    let mut positions = Vec::with_capacity(ORBIT_SEGMENTS + 1);
-    let mut normals = Vec::with_capacity(ORBIT_SEGMENTS + 1);
-
-    for i in 0..=ORBIT_SEGMENTS {
-        let nu = (i % ORBIT_SEGMENTS) as f64 * step_rad;
-        let r = a * (1.0 - e * e) / (1.0 + e * nu.cos());
-        
-        let cos_omega_nu = (omega_lower + nu).cos();
-        let sin_omega_nu = (omega_lower + nu).sin();
-        
-        let x = (r * (cos_omega_upper * cos_omega_nu - sin_omega_upper * sin_omega_nu * cos_i)) as f32;
-        let y = (r * (sin_omega_upper * cos_omega_nu + cos_omega_upper * sin_omega_nu * cos_i)) as f32;
-        let z = (r * (sin_i * sin_omega_nu)) as f32;
-
-        positions.push([x, y, z]);
-        normals.push([0.0, 0.0, 1.0]);
-    }
-
-    let mut mesh = Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::default());
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-    mesh
-}
 
 /// Calculates the screen-space projected radius of a spherical celestial body in pixels.
 #[must_use]
@@ -370,28 +378,39 @@ pub fn setup_solar_system(
         commands.entity(body_entity).add_children(&[astro_dot, surface_nodes]);
     }
 
-    // Spawn orbital curve loops as children of their respective parent celestial bodies
+    // Spawn dynamic orbital dots as children of their respective parent celestial bodies
     for config in &configs {
         if config.semi_major_axis_m > 0.0 {
             if let Some(parent_name) = &config.parent_name {
                 if let Some(&parent_entity) = body_entities.get(parent_name) {
-                    let orbit_mesh = meshes.add(create_orbit_curve_mesh(
-                        config.semi_major_axis_m,
-                        config.eccentricity,
-                        config.inclination_rad,
-                        config.longitude_of_ascending_node_rad,
-                        config.argument_of_periapsis_rad,
-                    ));
-                    let orbit_entity = commands
-                        .spawn((
-                            Mesh3d(orbit_mesh),
-                            MeshMaterial3d(orbit_material.clone()),
-                            Transform::IDENTITY,
-                            Visibility::Inherited,
-                            OrbitCurveMarker,
-                        ))
-                        .id();
-                    commands.entity(parent_entity).add_child(orbit_entity);
+                    if let Some(&body_entity) = body_entities.get(&config.name) {
+                        let mut mesh = Mesh::new(
+                            PrimitiveTopology::PointList,
+                            RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+                        );
+                        mesh.insert_attribute(
+                            Mesh::ATTRIBUTE_POSITION,
+                            vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
+                        );
+                        mesh.insert_attribute(
+                            Mesh::ATTRIBUTE_NORMAL,
+                            vec![[0.0_f32, 0.0_f32, 1.0_f32]; ORBIT_DOT_COUNT],
+                        );
+                        let mesh_handle = meshes.add(mesh);
+                        let orbit_entity = commands
+                            .spawn((
+                                Mesh3d(mesh_handle.clone()),
+                                MeshMaterial3d(orbit_material.clone()),
+                                Transform::IDENTITY,
+                                Visibility::Inherited,
+                                DynamicOrbitDots {
+                                    mesh_handle,
+                                    body_entity,
+                                },
+                            ))
+                            .id();
+                        commands.entity(parent_entity).add_child(orbit_entity);
+                    }
                 }
             }
         }
@@ -403,6 +422,53 @@ pub fn setup_solar_system(
         focused_position: default_focus_pos,
         body_names,
     });
+}
+
+/// Dynamically updates the orbital point mesh for each celestial body based on current simulation time.
+///
+/// Grounded in SSOT-PHY-001 and PLAN-019.
+/// Evaluates `calculate_kepler_position` across [`T_sim` - 200h, `T_sim` + 200h] in parent local space.
+#[allow(
+    clippy::needless_pass_by_value,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless
+)]
+pub fn update_orbital_dots_system(
+    sim_time: Res<SimulationTime>,
+    orbit_query: Query<(&DynamicOrbitDots, &Parent)>,
+    body_query: Query<&CelestialBody>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    let t_sim = sim_time.elapsed_seconds;
+
+    for (orbit_dots, _parent) in &orbit_query {
+        let Ok(body) = body_query.get(orbit_dots.body_entity) else {
+            continue;
+        };
+
+        let Some(mesh) = meshes.get_mut(&orbit_dots.mesh_handle) else {
+            continue;
+        };
+
+        let Some(bevy::render::mesh::VertexAttributeValues::Float32x3(positions)) =
+            mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
+        else {
+            continue;
+        };
+
+        if positions.len() != ORBIT_DOT_COUNT {
+            positions.resize(ORBIT_DOT_COUNT, [0.0, 0.0, 0.0]);
+        }
+
+        for (i, pos_out) in positions.iter_mut().enumerate() {
+            let offset_hours = (i as i32) - ORBIT_DOT_WINDOW_HOURS;
+            let t_point = t_sim + f64::from(offset_hours) * ORBIT_DOT_INTERVAL_S;
+            let kepler_pos = calculate_kepler_position(&body.config, GlobalPosition::ZERO, t_point);
+            *pos_out = [kepler_pos.x as f32, kepler_pos.y as f32, kepler_pos.z as f32];
+        }
+    }
 }
 
 /// Floating-origin translation system: offsets all celestial bodies relative to focused body.
@@ -424,12 +490,15 @@ pub fn update_floating_origin_transforms(
 ///
 /// Returns true if the focus successfully changed to a new body index.
 #[allow(clippy::cast_possible_truncation)]
-pub fn focus_on_body(
+pub fn focus_on_body<'a, I>(
     index: usize,
     origin: &mut FloatingOrigin,
-    body_query: &Query<&CelestialBody>,
+    bodies: I,
     camera_query: &mut Query<&mut GlobeOrbitCamera>,
-) -> bool {
+) -> bool
+where
+    I: IntoIterator<Item = &'a CelestialBody>,
+{
     let total = origin.body_names.len();
     if index >= total || index == origin.focused_index {
         return false;
@@ -438,7 +507,7 @@ pub fn focus_on_body(
     origin.focused_index = index;
     origin.focused_name = origin.body_names[index].clone();
 
-    for body in body_query {
+    for body in bodies {
         if body.index == index {
             origin.focused_position = body.global_position;
             // Scale camera target distance comfortably to the new body radius
@@ -451,6 +520,112 @@ pub fn focus_on_body(
     }
 
     true
+}
+
+/// Screen-to-world raycasting and picking system for celestial bodies.
+///
+/// Clicking directly on a celestial body focuses the camera and floating origin on it.
+#[allow(
+    clippy::needless_pass_by_value,
+    clippy::cast_possible_truncation
+)]
+pub fn mouse_pick_astronode_system(
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    window_query: Query<&Window, With<bevy::window::PrimaryWindow>>,
+    camera_query: Query<(&Camera, &GlobalTransform, &Projection), With<GlobeOrbitCamera>>,
+    body_query: Query<(&CelestialBody, &GlobalTransform)>,
+    mut origin: ResMut<FloatingOrigin>,
+    mut globe_camera: Query<&mut GlobeOrbitCamera>,
+    mut click_start_pos: Local<Option<Vec2>>,
+) {
+    if mouse_button_input.just_pressed(MouseButton::Left) {
+        if let Ok(window) = window_query.get_single() {
+            *click_start_pos = window.cursor_position();
+        }
+    }
+
+    if !mouse_button_input.just_released(MouseButton::Left) {
+        if mouse_button_input.pressed(MouseButton::Left) {
+            if let (Some(start_pos), Ok(window)) = (*click_start_pos, window_query.get_single()) {
+                if let Some(cursor_pos) = window.cursor_position() {
+                    if start_pos.distance_squared(cursor_pos)
+                        > MAX_CLICK_DRAG_DISTANCE_PX * MAX_CLICK_DRAG_DISTANCE_PX
+                    {
+                        *click_start_pos = None;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    let Some(start_pos) = click_start_pos.take() else {
+        return;
+    };
+
+    let Ok(window) = window_query.get_single() else {
+        return;
+    };
+
+    let Some(cursor_pos) = window.cursor_position() else {
+        return;
+    };
+
+    if start_pos.distance_squared(cursor_pos)
+        > MAX_CLICK_DRAG_DISTANCE_PX * MAX_CLICK_DRAG_DISTANCE_PX
+    {
+        return;
+    }
+
+    let Ok((camera, camera_transform, projection)) = camera_query.get_single() else {
+        return;
+    };
+
+    let fov = match projection {
+        Projection::Perspective(p) => p.fov,
+        Projection::Orthographic(_) => 3.0 * std::f32::consts::PI / 180.0,
+    };
+
+    let viewport_height = window.height().max(1.0);
+    let cam_pos = camera_transform.translation();
+
+    let mut closest_body_index = None;
+    let mut closest_distance_sq = f32::INFINITY;
+
+    for (body, body_transform) in &body_query {
+        let body_pos = body_transform.translation();
+        let Some(screen_pos) = camera.world_to_viewport(camera_transform, body_pos).ok() else {
+            continue;
+        };
+
+        let cam_to_body = body_pos - cam_pos;
+        let distance_3d_sq = cam_to_body.length_squared();
+        let distance_3d = distance_3d_sq.sqrt().max(1.0);
+
+        let projected_radius = calculate_screen_radius_px(
+            body.config.radius_m,
+            distance_3d,
+            fov,
+            viewport_height,
+        );
+        let pick_radius = projected_radius.max(MIN_PICK_RADIUS_PX);
+        let pick_radius_sq = pick_radius * pick_radius;
+
+        let screen_dist_sq = cursor_pos.distance_squared(screen_pos);
+        if screen_dist_sq <= pick_radius_sq && distance_3d_sq < closest_distance_sq {
+            closest_distance_sq = distance_3d_sq;
+            closest_body_index = Some(body.index);
+        }
+    }
+
+    if let Some(target_index) = closest_body_index {
+        focus_on_body(
+            target_index,
+            &mut origin,
+            body_query.iter().map(|(b, _)| b),
+            &mut globe_camera,
+        );
+    }
 }
 
 /// Keyboard shortcuts to cycle or jump celestial focus (Tab, Shift-Tab, 1-9).
@@ -524,7 +699,7 @@ pub fn update_surface_node_visibility(
 
     let fov = match projection {
         Projection::Perspective(p) => p.fov,
-        _ => 3.0 * std::f32::consts::PI / 180.0,
+        Projection::Orthographic(_) => 3.0 * std::f32::consts::PI / 180.0,
     };
 
     let viewport_height = window_query
@@ -671,35 +846,295 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::cast_possible_truncation)]
-    fn test_create_orbit_curve_mesh() {
-        let a = 1.0e11;
-        let e = 0.1;
-        let mesh = create_orbit_curve_mesh(a, e, 0.0, 0.0, 0.0);
-        assert_eq!(mesh.primitive_topology(), PrimitiveTopology::LineStrip);
-        let positions = mesh
-            .attribute(Mesh::ATTRIBUTE_POSITION)
-            .expect("Positions attribute must exist");
-        if let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) = positions {
-            assert_eq!(pts.len(), ORBIT_SEGMENTS + 1);
-            // Periapsis at nu = 0, angle = 0: x = a * (1 - e), y = 0
-            let periapsis_x = pts[0][0];
-            let expected_peri = (a * (1.0 - e)) as f32;
-            assert!((periapsis_x - expected_peri).abs() < 1e3);
-            assert!(pts[0][1].abs() < 1e3);
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        clippy::float_cmp,
+        clippy::cast_lossless
+    )]
+    fn test_orbital_local_space_invariance() {
+        let mut app = App::new();
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Mesh>();
+        app.insert_resource(SimulationTime::new(10_000.0));
 
-            // Apoapsis at nu = PI (sample index 64): x = -a * (1 + e), y = 0
-            let apoapsis_x = pts[64][0];
-            let expected_apo = (-a * (1.0 + e)) as f32;
-            assert!((apoapsis_x - expected_apo).abs() < 1e3);
-            assert!(pts[64][1].abs() < 1e3);
+        let parent_entity = app
+            .world_mut()
+            .spawn((
+                Transform::from_xyz(1.0e11, 2.0e11, 3.0e11),
+                GlobalTransform::from(Transform::from_xyz(1.0e11, 2.0e11, 3.0e11)),
+            ))
+            .id();
 
-            // Loop closure: index 0 equals index 128
-            assert!((pts[0][0] - pts[ORBIT_SEGMENTS][0]).abs() < 1e-4);
-            assert!((pts[0][1] - pts[ORBIT_SEGMENTS][1]).abs() < 1e-4);
-            assert!((pts[0][2] - pts[ORBIT_SEGMENTS][2]).abs() < 1e-4);
-        } else {
-            panic!("Expected Float32x3 positions format");
+        let earth_config = AstroNodeConfig {
+            name: "Earth".into(),
+            parent_name: Some("Sun".into()),
+            mass_kg: 5.972e24,
+            radius_m: 6.371e6,
+            semi_major_axis_m: 1.495_978_7e11,
+            eccentricity: 0.0167,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
+            true_anomaly_epoch_rad: 0.0,
+            mean_motion_rad_s: 1.991e-7,
+        };
+
+        let body_entity = app
+            .world_mut()
+            .spawn(CelestialBody {
+                config: earth_config,
+                global_position: GlobalPosition::new(1.495_978_7e11, 0.0, 0.0),
+                index: 1,
+            })
+            .id();
+
+        let mut initial_mesh = Mesh::new(
+            PrimitiveTopology::PointList,
+            RenderAssetUsages::default(),
+        );
+        initial_mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
+        );
+        let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(initial_mesh);
+
+        let orbit_entity = app
+            .world_mut()
+            .spawn(DynamicOrbitDots {
+                mesh_handle: mesh_handle.clone(),
+                body_entity,
+            })
+            .id();
+        app.world_mut().entity_mut(parent_entity).add_child(orbit_entity);
+
+        app.add_systems(Update, update_orbital_dots_system);
+        app.update();
+
+        let first_positions: Vec<[f32; 3]> = {
+            let meshes = app.world().resource::<Assets<Mesh>>();
+            let mesh = meshes.get(&mesh_handle).unwrap();
+            let pos_attr = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
+            let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) = pos_attr else {
+                panic!("Expected Float32x3 positions");
+            };
+            pts.clone()
+        };
+
+        // Mutate parent transform significantly to simulate camera translation or parent movement
+        {
+            let mut parent_transform = app
+                .world_mut()
+                .get_mut::<Transform>(parent_entity)
+                .unwrap();
+            parent_transform.translation = Vec3::new(-9.9e11, 4.4e11, -1.2e11);
+        }
+        app.update();
+
+        let second_positions: Vec<[f32; 3]> = {
+            let meshes = app.world().resource::<Assets<Mesh>>();
+            let mesh = meshes.get(&mesh_handle).unwrap();
+            let pos_attr = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
+            let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) = pos_attr else {
+                panic!("Expected Float32x3 positions");
+            };
+            pts.clone()
+        };
+
+        assert_eq!(first_positions.len(), ORBIT_DOT_COUNT);
+        for (p1, p2) in first_positions.iter().zip(&second_positions) {
+            assert_eq!(
+                p1, p2,
+                "Orbital points must be strictly invariant to parent transform in local space"
+            );
+            let radius = (p1[0] * p1[0] + p1[1] * p1[1] + p1[2] * p1[2]).sqrt();
+            assert!(
+                f64::from(radius) < 1.495_978_7e11 * 1.05 && f64::from(radius) > 1.495_978_7e11 * 0.95,
+                "Point must be centered around parent local origin"
+            );
+        }
+    }
+
+    #[test]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        clippy::cast_lossless
+    )]
+    fn test_orbital_time_window_bounds() {
+        let t_sim = 72_000.0_f64;
+        let config = AstroNodeConfig {
+            name: "TestBody".into(),
+            parent_name: Some("Sun".into()),
+            mass_kg: 1.0,
+            radius_m: 1000.0,
+            semi_major_axis_m: 1.0e10,
+            eccentricity: 0.1,
+            inclination_rad: 0.05,
+            longitude_of_ascending_node_rad: 0.1,
+            argument_of_periapsis_rad: 0.2,
+            true_anomaly_epoch_rad: 0.3,
+            mean_motion_rad_s: 1.0e-5,
+        };
+
+        let mut app = App::new();
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Mesh>();
+        app.insert_resource(SimulationTime::new(t_sim));
+
+        let body_entity = app
+            .world_mut()
+            .spawn(CelestialBody {
+                config: config.clone(),
+                global_position: GlobalPosition::ZERO,
+                index: 0,
+            })
+            .id();
+
+        let parent_entity = app.world_mut().spawn(Transform::IDENTITY).id();
+
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::PointList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
+        );
+        let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
+
+        let orbit_entity = app
+            .world_mut()
+            .spawn(DynamicOrbitDots {
+                mesh_handle: mesh_handle.clone(),
+                body_entity,
+            })
+            .id();
+        app.world_mut().entity_mut(parent_entity).add_child(orbit_entity);
+
+        app.add_systems(Update, update_orbital_dots_system);
+        app.update();
+
+        let meshes = app.world().resource::<Assets<Mesh>>();
+        let mesh = meshes.get(&mesh_handle).unwrap();
+        let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) =
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()
+        else {
+            panic!("Expected Float32x3 positions");
+        };
+
+        assert_eq!(pts.len(), ORBIT_DOT_COUNT);
+
+        // Verify index 0: T_points[0] strictly equals T_sim - ORBIT_DOT_WINDOW_HOURS * 3600
+        let expected_t_start = t_sim - f64::from(ORBIT_DOT_WINDOW_HOURS) * 3600.0;
+        let expected_pos_start = calculate_kepler_position(&config, GlobalPosition::ZERO, expected_t_start);
+        assert!((pts[0][0] - expected_pos_start.x as f32).abs() < 1e-1);
+        assert!((pts[0][1] - expected_pos_start.y as f32).abs() < 1e-1);
+        assert!((pts[0][2] - expected_pos_start.z as f32).abs() < 1e-1);
+
+        // Verify index 200 (current time T_sim)
+        let mid_idx = ORBIT_DOT_WINDOW_HOURS as usize;
+        let expected_pos_mid = calculate_kepler_position(&config, GlobalPosition::ZERO, t_sim);
+        assert!((pts[mid_idx][0] - expected_pos_mid.x as f32).abs() < 1e-1);
+        assert!((pts[mid_idx][1] - expected_pos_mid.y as f32).abs() < 1e-1);
+        assert!((pts[mid_idx][2] - expected_pos_mid.z as f32).abs() < 1e-1);
+
+        // Verify index 400: T_points[400] strictly equals T_sim + ORBIT_DOT_WINDOW_HOURS * 3600
+        let end_idx = ORBIT_DOT_COUNT - 1;
+        let expected_t_end = t_sim + f64::from(ORBIT_DOT_WINDOW_HOURS) * 3600.0;
+        let expected_pos_end = calculate_kepler_position(&config, GlobalPosition::ZERO, expected_t_end);
+        assert!((pts[end_idx][0] - expected_pos_end.x as f32).abs() < 1e-1);
+        assert!((pts[end_idx][1] - expected_pos_end.y as f32).abs() < 1e-1);
+        assert!((pts[end_idx][2] - expected_pos_end.z as f32).abs() < 1e-1);
+    }
+
+    #[test]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        clippy::cast_lossless
+    )]
+    fn test_eccentricity_edge_cases() {
+        let test_eccentricities = [0.0, 0.001, 0.5, 0.9, 0.99, 0.999_999];
+        let test_sim_times = [-1_000_000.0, 0.0, 100.0, 500_000.0, 10_000_000.0];
+
+        for &e in &test_eccentricities {
+            let config = AstroNodeConfig {
+                name: format!("Body_e_{e}"),
+                parent_name: Some("Sun".into()),
+                mass_kg: 1.0e24,
+                radius_m: 5.0e6,
+                semi_major_axis_m: 2.0e11,
+                eccentricity: e,
+                inclination_rad: 0.1,
+                longitude_of_ascending_node_rad: 0.2,
+                argument_of_periapsis_rad: 0.3,
+                true_anomaly_epoch_rad: 0.0,
+                mean_motion_rad_s: 1.0e-7,
+            };
+
+            for &t in &test_sim_times {
+                let mut app = App::new();
+                app.add_plugins(bevy::asset::AssetPlugin::default());
+                app.init_asset::<Mesh>();
+                app.insert_resource(SimulationTime::new(t));
+
+                let body_entity = app
+                    .world_mut()
+                    .spawn(CelestialBody {
+                        config: config.clone(),
+                        global_position: GlobalPosition::ZERO,
+                        index: 0,
+                    })
+                    .id();
+
+                let parent_entity = app.world_mut().spawn(Transform::IDENTITY).id();
+
+                let mut mesh = Mesh::new(
+                    PrimitiveTopology::PointList,
+                    RenderAssetUsages::default(),
+                );
+                mesh.insert_attribute(
+                    Mesh::ATTRIBUTE_POSITION,
+                    vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
+                );
+                let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
+
+                let orbit_entity = app
+                    .world_mut()
+                    .spawn(DynamicOrbitDots {
+                        mesh_handle: mesh_handle.clone(),
+                        body_entity,
+                    })
+                    .id();
+                app.world_mut().entity_mut(parent_entity).add_child(orbit_entity);
+
+                app.add_systems(Update, update_orbital_dots_system);
+                app.update();
+
+                let meshes = app.world().resource::<Assets<Mesh>>();
+                let mesh = meshes.get(&mesh_handle).unwrap();
+                let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) =
+                    mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()
+                else {
+                    panic!("Expected Float32x3 positions");
+                };
+
+                assert_eq!(pts.len(), ORBIT_DOT_COUNT);
+                for pt in pts {
+                    assert!(!pt[0].is_nan() && !pt[0].is_infinite(), "X must be finite for e={e}");
+                    assert!(!pt[1].is_nan() && !pt[1].is_infinite(), "Y must be finite for e={e}");
+                    assert!(!pt[2].is_nan() && !pt[2].is_infinite(), "Z must be finite for e={e}");
+
+                    let r = f64::from(pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2]).sqrt();
+                    let min_expected = config.semi_major_axis_m * (1.0 - e) * 0.999;
+                    let max_expected = config.semi_major_axis_m * (1.0 + e) * 1.001;
+                    assert!(
+                        r >= min_expected && r <= max_expected,
+                        "Radius {r} out of bounds [{min_expected}, {max_expected}] for e={e}"
+                    );
+                }
+            }
         }
     }
 
@@ -739,5 +1174,316 @@ mod tests {
 
         app.add_systems(Update, test_system);
         app.update();
+    }
+
+    fn create_test_body_config(name: &str) -> AstroNodeConfig {
+        AstroNodeConfig {
+            name: name.into(),
+            parent_name: None,
+            mass_kg: 1.0,
+            radius_m: 0.01,
+            semi_major_axis_m: 0.0,
+            eccentricity: 0.0,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
+            true_anomaly_epoch_rad: 0.0,
+            mean_motion_rad_s: 0.0,
+        }
+    }
+
+    fn setup_test_pick_app() -> (App, Entity) {
+        let mut app = App::new();
+        app.add_plugins((
+            bevy::window::WindowPlugin {
+                primary_window: None,
+                ..default()
+            },
+            bevy::asset::AssetPlugin::default(),
+            bevy::render::camera::CameraPlugin,
+        ));
+        app.init_asset::<Image>();
+        app.init_resource::<ButtonInput<MouseButton>>();
+
+        let win = app
+            .world_mut()
+            .spawn((
+                Window {
+                    resolution: (800.0_f32, 600.0_f32).into(),
+                    ..default()
+                },
+                bevy::window::PrimaryWindow,
+            ))
+            .id();
+
+        let cam_transform = Transform::from_xyz(0.0, 0.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y);
+        app.world_mut().spawn((
+            Camera {
+                target: bevy::render::camera::RenderTarget::Window(
+                    bevy::window::WindowRef::Entity(win),
+                ),
+                ..default()
+            },
+            Projection::Perspective(PerspectiveProjection::default()),
+            cam_transform,
+            GlobalTransform::from(cam_transform),
+            GlobeOrbitCamera::default(),
+        ));
+
+        // Body 0: Far body along Z axis at (0, 0, 0) -> distance 100 to cam
+        app.world_mut().spawn((
+            CelestialBody {
+                config: create_test_body_config("FarBody"),
+                global_position: GlobalPosition::ZERO,
+                index: 0,
+            },
+            Transform::from_xyz(0.0, 0.0, 0.0),
+            GlobalTransform::from(Transform::from_xyz(0.0, 0.0, 0.0)),
+        ));
+
+        // Body 1: Near body along Z axis at (0, 0, 50) -> distance 50 to cam
+        app.world_mut().spawn((
+            CelestialBody {
+                config: create_test_body_config("NearBody"),
+                global_position: GlobalPosition { x: 50.0, y: 0.0, z: 0.0 },
+                index: 1,
+            },
+            Transform::from_xyz(0.0, 0.0, 50.0),
+            GlobalTransform::from(Transform::from_xyz(0.0, 0.0, 50.0)),
+        ));
+
+        // Body 2: Behind camera at (0, 0, 150) -> camera is at 100 looking towards -Z
+        app.world_mut().spawn((
+            CelestialBody {
+                config: create_test_body_config("BehindBody"),
+                global_position: GlobalPosition { x: 150.0, y: 0.0, z: 0.0 },
+                index: 2,
+            },
+            Transform::from_xyz(0.0, 0.0, 150.0),
+            GlobalTransform::from(Transform::from_xyz(0.0, 0.0, 150.0)),
+        ));
+
+        app.insert_resource(FloatingOrigin {
+            focused_index: 0,
+            focused_name: "FarBody".into(),
+            focused_position: GlobalPosition::ZERO,
+            body_names: vec!["FarBody".into(), "NearBody".into(), "BehindBody".into()],
+        });
+
+        app.add_systems(
+            Update,
+            (
+                bevy::render::camera::camera_system::<Projection>,
+                mouse_pick_astronode_system,
+            ).chain(),
+        );
+
+        (app, win)
+    }
+
+    #[test]
+    fn test_mouse_pick_z_depth_priority() {
+        let (mut app, win) = setup_test_pick_app();
+        app.update();
+
+        // Frame 1: Press at center (400, 300)
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(400.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.press(MouseButton::Left);
+        }
+        app.update();
+
+        // Frame 2: Release at center (400, 300) without drag
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(400.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.clear_just_pressed(MouseButton::Left);
+            mouse.release(MouseButton::Left);
+        }
+        app.update();
+
+        let origin = app.world().resource::<FloatingOrigin>();
+        assert_eq!(
+            origin.focused_index, 1,
+            "Picking should prioritize the closer body in 3D distance"
+        );
+        assert_eq!(origin.focused_name, "NearBody");
+    }
+
+    #[test]
+    fn test_mouse_pick_click_vs_drag() {
+        let (mut app, win) = setup_test_pick_app();
+        app.update();
+
+        // Case 1: Drag displacement > 5px should NOT trigger pick
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(400.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.press(MouseButton::Left);
+        }
+        app.update();
+
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(420.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.clear_just_pressed(MouseButton::Left);
+            mouse.release(MouseButton::Left);
+        }
+        app.update();
+
+        let origin = app.world().resource::<FloatingOrigin>();
+        assert_eq!(
+            origin.focused_index, 0,
+            "Mouse drag exceeding displacement threshold must not trigger picking"
+        );
+
+        // Case 2: Sub-threshold movement (<= 5px) DOES trigger pick
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(400.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.press(MouseButton::Left);
+        }
+        app.update();
+
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(402.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.clear_just_pressed(MouseButton::Left);
+            mouse.release(MouseButton::Left);
+        }
+        app.update();
+
+        let origin = app.world().resource::<FloatingOrigin>();
+        assert_eq!(
+            origin.focused_index, 1,
+            "Small mouse movement within threshold must register as a valid click"
+        );
+    }
+
+    #[test]
+    fn test_mouse_pick_behind_camera_filtered() {
+        let mut app = App::new();
+        app.add_plugins((
+            bevy::window::WindowPlugin {
+                primary_window: None,
+                ..default()
+            },
+            bevy::asset::AssetPlugin::default(),
+            bevy::render::camera::CameraPlugin,
+        ));
+        app.init_asset::<Image>();
+        app.init_resource::<ButtonInput<MouseButton>>();
+
+        let win = app
+            .world_mut()
+            .spawn((
+                Window {
+                    resolution: (800.0_f32, 600.0_f32).into(),
+                    ..default()
+                },
+                bevy::window::PrimaryWindow,
+            ))
+            .id();
+
+        let cam_transform = Transform::from_xyz(0.0, 0.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y);
+        app.world_mut().spawn((
+            Camera {
+                target: bevy::render::camera::RenderTarget::Window(
+                    bevy::window::WindowRef::Entity(win),
+                ),
+                ..default()
+            },
+            Projection::Perspective(PerspectiveProjection::default()),
+            cam_transform,
+            GlobalTransform::from(cam_transform),
+            GlobeOrbitCamera::default(),
+        ));
+
+        // Only spawn a body behind the camera at Z = 150
+        app.world_mut().spawn((
+            CelestialBody {
+                config: create_test_body_config("BehindOnly"),
+                global_position: GlobalPosition { x: 150.0, y: 0.0, z: 0.0 },
+                index: 0,
+            },
+            Transform::from_xyz(0.0, 0.0, 150.0),
+            GlobalTransform::from(Transform::from_xyz(0.0, 0.0, 150.0)),
+        ));
+
+        app.insert_resource(FloatingOrigin {
+            focused_index: 99,
+            focused_name: "None".into(),
+            focused_position: GlobalPosition::ZERO,
+            body_names: vec!["BehindOnly".into()],
+        });
+
+        app.add_systems(
+            Update,
+            (
+                bevy::render::camera::camera_system::<Projection>,
+                mouse_pick_astronode_system,
+            ).chain(),
+        );
+
+        app.update();
+
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(400.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.press(MouseButton::Left);
+        }
+        app.update();
+
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(400.0, 300.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.clear_just_pressed(MouseButton::Left);
+            mouse.release(MouseButton::Left);
+        }
+        app.update();
+
+        let origin = app.world().resource::<FloatingOrigin>();
+        assert_eq!(
+            origin.focused_index, 99,
+            "Behind-camera bodies returning None for viewport coordinates must not be picked"
+        );
+    }
+
+    #[test]
+    fn test_mouse_pick_empty_space() {
+        let (mut app, win) = setup_test_pick_app();
+        app.update();
+
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(10.0, 10.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.press(MouseButton::Left);
+        }
+        app.update();
+
+        {
+            let mut window = app.world_mut().get_mut::<Window>(win).unwrap();
+            window.set_cursor_position(Some(Vec2::new(10.0, 10.0)));
+            let mut mouse = app.world_mut().resource_mut::<ButtonInput<MouseButton>>();
+            mouse.clear_just_pressed(MouseButton::Left);
+            mouse.release(MouseButton::Left);
+        }
+        app.update();
+
+        let origin = app.world().resource::<FloatingOrigin>();
+        assert_eq!(
+            origin.focused_index, 0,
+            "Clicking empty space must not change celestial focus"
+        );
     }
 }

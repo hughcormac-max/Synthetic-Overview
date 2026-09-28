@@ -39,6 +39,8 @@ Archived plans are categorized by year under `.agents/plans/archive/YYYY/PLAN-XX
 | [PLAN-015](2026/PLAN-015.md) | Solar System Ecliptic Orientation Widget and Astrobody Selector | `completed` | Antigravity | 2026-09-21 | 2026-09-21 | [2026/PLAN-015.md](2026/PLAN-015.md) |
 | [PLAN-016](2026/PLAN-016.md) | Pivot to Full 3D Solar System & Astrodynamics | `completed` | Antigravity | 2026-09-21 | 2026-09-21 | [2026/PLAN-016.md](2026/PLAN-016.md) |
 | [PLAN-017](2026/PLAN-017.md) | Native 6-Step Spec-Driven Development Pipeline | `completed` | Antigravity | 2026-09-21 | 2026-09-21 | [2026/PLAN-017.md](2026/PLAN-017.md) |
+| [PLAN-018](2026/PLAN-018.md) | Improve Camera Navigation UI | `completed` | Antigravity | 2026-09-22 | 2026-09-22 | [2026/PLAN-018.md](2026/PLAN-018.md) |
+| [PLAN-019](2026/PLAN-019.md) | Instanced Time-Step Dot Rendering for Orbital Paths | `completed` | Antigravity | 2026-09-23 | 2026-09-23 | [2026/PLAN-019.md](2026/PLAN-019.md) |
 
 ---
 

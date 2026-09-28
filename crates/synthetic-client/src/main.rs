@@ -28,7 +28,12 @@ fn main() {
         .add_plugins(AstronomyPlugin)
         .add_plugins(UiPlugin)
         .add_systems(Startup, setup_ui)
-        .add_systems(Update, update_fps_text)
+        .add_systems(
+            Update,
+            update_fps_text.run_if(bevy::time::common_conditions::on_timer(
+                std::time::Duration::from_millis(250),
+            )),
+        )
         .run();
 }
 

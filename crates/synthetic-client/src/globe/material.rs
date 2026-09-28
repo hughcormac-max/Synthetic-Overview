@@ -87,9 +87,9 @@ impl Material for OrbitMaterial {
         _pipeline: &MaterialPipeline<Self>,
         descriptor: &mut RenderPipelineDescriptor,
         _layout: &MeshVertexBufferLayoutRef,
-        _key: MaterialPipelineKey<Self>,
+        key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
-        descriptor.primitive.topology = PrimitiveTopology::LineStrip;
+        descriptor.primitive.topology = key.mesh_key.primitive_topology();
         descriptor.primitive.cull_mode = None;
         Ok(())
     }

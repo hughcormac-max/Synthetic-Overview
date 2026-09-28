@@ -121,7 +121,7 @@ pub fn orbit_camera_input_system(
         if camera.is_dragging && motion_delta != Vec2::ZERO {
             camera.target_yaw += -motion_delta.x * camera.rotate_sensitivity;
             camera.target_pitch = (camera.target_pitch
-                - motion_delta.y * camera.rotate_sensitivity)
+                + motion_delta.y * camera.rotate_sensitivity)
                 .clamp(-DEFAULT_PITCH_LIMIT, DEFAULT_PITCH_LIMIT);
         }
 
@@ -228,5 +228,41 @@ mod tests {
                 transform.right()
             );
         }
+    }
+    #[test]
+    fn test_orbit_camera_vertical_inversion() {
+        let mut app = App::new();
+        app.add_event::<MouseMotion>();
+        app.add_event::<MouseWheel>();
+        let mut button_input = ButtonInput::<MouseButton>::default();
+        button_input.press(MouseButton::Left);
+        app.insert_resource(button_input);
+
+        let cam_entity = app
+            .world_mut()
+            .spawn(GlobeOrbitCamera {
+                is_dragging: true,
+                target_pitch: 0.0,
+                rotate_sensitivity: 0.1,
+                ..default()
+            })
+            .id();
+
+        app.add_systems(Update, orbit_camera_input_system);
+
+        app.world_mut()
+            .resource_mut::<Events<MouseMotion>>()
+            .send(MouseMotion {
+                delta: Vec2::new(0.0, 5.0),
+            });
+
+        app.update();
+
+        let cam = app.world().get::<GlobeOrbitCamera>(cam_entity).unwrap();
+        assert!(
+            (cam.target_pitch - 0.5).abs() < 1e-5,
+            "target_pitch should be 0.5 with positive delta.y, got {}",
+            cam.target_pitch
+        );
     }
 }
