@@ -28,6 +28,7 @@
 | [PLAN-017](PLAN-017.md) | Native 6-Step Spec-Driven Development Pipeline | `completed` | Antigravity | 2026-09-21 | 2026-09-21 | `main` | [PLAN-017.md](PLAN-017.md) |
 | [PLAN-018](PLAN-018.md) | Improve Camera Navigation UI | `completed` | Antigravity | 2026-09-22 | 2026-09-22 | `main` | [PLAN-018.md](PLAN-018.md) |
 | [PLAN-019](PLAN-019.md) | Instanced Time-Step Dot Rendering for Orbital Paths | `completed` | Antigravity | 2026-09-23 | 2026-09-23 | `orbit-dots` | [PLAN-019.md](PLAN-019.md) |
+| [PLAN-020](PLAN-020.md) | Simulation Time Warp Controls & Keyboard Shortcut Help Popup | `completed` | Antigravity | 2026-09-29 | 2026-09-29 | `main` | [PLAN-020.md](PLAN-020.md) |
 
 ---
 

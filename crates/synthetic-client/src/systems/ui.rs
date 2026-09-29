@@ -71,6 +71,10 @@ pub struct AstrobodyButton {
     pub index: usize,
 }
 
+/// Marker component attached to the root entity of the keybinding help modal overlay.
+#[derive(Component, Debug, Clone)]
+pub struct KeybindingHelpModal;
+
 /// Generates a closed line loop mesh in the XY plane representing the ecliptic circle.
 #[must_use]
 #[allow(clippy::cast_precision_loss)]
@@ -483,6 +487,179 @@ pub fn handle_astrobody_selector_scroll(
     }
 }
 
+/// Toggles keybinding help modal visibility when H is pressed, and hides it when Escape is pressed.
+#[allow(clippy::needless_pass_by_value)]
+pub fn toggle_keybinding_help_system(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut query: Query<&mut Visibility, With<KeybindingHelpModal>>,
+) {
+    let toggle_h = keyboard.just_pressed(KeyCode::KeyH);
+    let close_esc = keyboard.just_pressed(KeyCode::Escape);
+
+    if !toggle_h && !close_esc {
+        return;
+    }
+
+    for mut vis in &mut query {
+        if toggle_h {
+            *vis = match *vis {
+                Visibility::Hidden => Visibility::Inherited,
+                Visibility::Inherited | Visibility::Visible => Visibility::Hidden,
+            };
+        } else if close_esc && *vis != Visibility::Hidden {
+            *vis = Visibility::Hidden;
+        }
+    }
+}
+
+fn spawn_section_header(commands: &mut Commands, parent: Entity, title: &str) {
+    let header = commands
+        .spawn((
+            Text::new(title),
+            TextFont {
+                font_size: 10.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.55, 0.65, 0.75)),
+            Node {
+                margin: UiRect::top(Val::Px(4.0)),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(parent).add_child(header);
+}
+
+fn spawn_keybinding_row(
+    commands: &mut Commands,
+    parent: Entity,
+    key_label: &str,
+    description: &str,
+) {
+    let row = commands
+        .spawn(Node {
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
+            width: Val::Percent(100.0),
+            padding: UiRect::vertical(Val::Px(1.5)),
+            ..default()
+        })
+        .id();
+
+    let badge = commands
+        .spawn((
+            Text::new(key_label),
+            TextFont {
+                font_size: 11.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.40, 0.85, 1.0)),
+            Node {
+                padding: UiRect::axes(Val::Px(6.0), Val::Px(2.0)),
+                border: UiRect::all(Val::Px(1.0)),
+                ..default()
+            },
+            BorderRadius::all(Val::Px(3.0)),
+            BackgroundColor(Color::srgba(0.10, 0.18, 0.28, 0.80)),
+            BorderColor(Color::srgba(0.25, 0.45, 0.65, 0.60)),
+        ))
+        .id();
+
+    let desc = commands
+        .spawn((
+            Text::new(description),
+            TextFont {
+                font_size: 11.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.85, 0.88, 0.92)),
+        ))
+        .id();
+
+    commands.entity(row).add_child(badge);
+    commands.entity(row).add_child(desc);
+    commands.entity(parent).add_child(row);
+}
+
+/// Spawns the centered keybinding help modal overlay (hidden by default).
+#[allow(clippy::needless_pass_by_value)]
+pub fn spawn_keybinding_help_modal(
+    mut commands: Commands,
+    ui_camera_query: Query<Entity, With<crate::UiCameraMarker>>,
+) {
+    let ui_camera = ui_camera_query.get_single().ok();
+
+    let mut root_cmd = commands.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        Visibility::Hidden,
+        KeybindingHelpModal,
+    ));
+
+    if let Some(cam) = ui_camera {
+        root_cmd.insert(TargetCamera(cam));
+    }
+    let root_entity = root_cmd.id();
+
+    let card = commands
+        .spawn((
+            Node {
+                width: Val::Px(380.0),
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(16.0)),
+                row_gap: Val::Px(8.0),
+                border: UiRect::all(Val::Px(1.5)),
+                ..default()
+            },
+            BorderRadius::all(Val::Px(8.0)),
+            BackgroundColor(Color::srgba(0.04, 0.06, 0.10, 0.94)),
+            BorderColor(Color::srgba(0.25, 0.55, 0.80, 0.75)),
+        ))
+        .id();
+    commands.entity(root_entity).add_child(card);
+
+    let header = commands
+        .spawn((
+            Text::new("KEYBOARD CONTROLS & SHORTCUTS"),
+            TextFont {
+                font_size: 13.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.40, 0.90, 1.0)),
+            Node {
+                margin: UiRect::bottom(Val::Px(4.0)),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(card).add_child(header);
+
+    // Section 1: Simulation Speed
+    spawn_section_header(&mut commands, card, "SIMULATION SPEED");
+    spawn_keybinding_row(&mut commands, card, "SPACE", "Pause / Resume simulation");
+    spawn_keybinding_row(&mut commands, card, "0 - 5", "Jump: Pause, 1s, 1m, 1h, 1d, 1mo");
+    spawn_keybinding_row(&mut commands, card, "[ / ]", "Step warp speed down / up");
+
+    // Section 2: Camera Navigation
+    spawn_section_header(&mut commands, card, "CAMERA NAVIGATION");
+    spawn_keybinding_row(&mut commands, card, "LMB Drag", "Orbit camera around focus");
+    spawn_keybinding_row(&mut commands, card, "RMB Drag", "Pan camera offset");
+    spawn_keybinding_row(&mut commands, card, "Scroll", "Zoom camera distance");
+
+    // Section 3: Navigation & Dismiss
+    spawn_section_header(&mut commands, card, "SELECTION & HELP");
+    spawn_keybinding_row(&mut commands, card, "LMB Click", "Select & focus celestial body");
+    spawn_keybinding_row(&mut commands, card, "H / ESC", "Toggle / close this help modal");
+}
+
 /// UI plugin managing the ecliptic orientation widget and celestial body selection UI.
 pub struct UiPlugin;
 
@@ -491,9 +668,12 @@ impl Plugin for UiPlugin {
         app.add_systems(Startup, setup_orientation_widget)
             .add_systems(
                 Startup,
-                spawn_astrobody_selector
-                    .after(crate::systems::astronomy::setup_solar_system)
-                    .after(crate::setup_ui),
+                (
+                    spawn_astrobody_selector
+                        .after(crate::systems::astronomy::setup_solar_system)
+                        .after(crate::setup_ui),
+                    spawn_keybinding_help_modal.after(crate::setup_ui),
+                ),
             )
             .add_systems(
                 Update,
@@ -502,6 +682,7 @@ impl Plugin for UiPlugin {
                     sync_orientation_widget_camera,
                     handle_astrobody_selector_interaction,
                     handle_astrobody_selector_scroll,
+                    toggle_keybinding_help_system,
                 ),
             );
     }
@@ -560,5 +741,48 @@ mod tests {
         } else {
             panic!("Expected Float32x3 format");
         }
+    }
+
+    #[test]
+    fn test_toggle_keybinding_help_system() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>();
+
+        let entity = app
+            .world_mut()
+            .spawn((KeybindingHelpModal, Visibility::Hidden))
+            .id();
+
+        app.add_systems(Update, toggle_keybinding_help_system);
+
+        // Frame 1: No key pressed -> remains Hidden
+        app.update();
+        assert_eq!(
+            *app.world().get::<Visibility>(entity).unwrap(),
+            Visibility::Hidden
+        );
+
+        // Frame 2: Press KeyH -> becomes Inherited (visible)
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::KeyH);
+        app.update();
+        assert_eq!(
+            *app.world().get::<Visibility>(entity).unwrap(),
+            Visibility::Inherited
+        );
+
+        // Frame 3: Press Escape -> becomes Hidden
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        assert_eq!(
+            *app.world().get::<Visibility>(entity).unwrap(),
+            Visibility::Hidden
+        );
     }
 }

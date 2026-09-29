@@ -2,19 +2,22 @@
 //!
 //! Grounded in SSOT-PHY-001, SSOT-PHY-004, and SSOT-UIX-001.
 
+use bevy::math::Vec3A;
 use bevy::prelude::*;
 use bevy::render::mesh::PrimitiveTopology;
+use bevy::render::primitives::Aabb;
 use bevy::render::render_asset::RenderAssetUsages;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use synthetic_core::astronomy::{
-    calculate_epoch_position, calculate_kepler_position, generate_fibonacci_nodes_by_density,
+    calculate_kepler_position, generate_fibonacci_nodes_by_density,
     AstroNodeConfig, GlobalPosition, SurfaceNode,
 };
 
 use crate::globe::camera::GlobeOrbitCamera;
 use crate::globe::material::{AstroDotMaterial, GlobeMaterial, OrbitMaterial};
+use crate::systems::time_warp::TimeWarp;
 
 /// Default surface node density in inverse meters: 1 node per kilometer of radius (1e-3 m^-1).
 pub const KM_SURFACE_NODE_DENSITY: f64 = 1e-3;
@@ -98,10 +101,14 @@ impl SimulationTime {
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SimulationTimeSystem;
 
-/// Advances simulation time based on real frame delta time.
+/// Advances simulation time based on real frame delta time and current warp multiplier.
 #[allow(clippy::needless_pass_by_value)]
-pub fn advance_simulation_time(time: Res<Time>, mut sim_time: ResMut<SimulationTime>) {
-    sim_time.elapsed_seconds += time.delta_secs_f64();
+pub fn advance_simulation_time(
+    time: Res<Time>,
+    time_warp: Res<TimeWarp>,
+    mut sim_time: ResMut<SimulationTime>,
+) {
+    sim_time.elapsed_seconds += time.delta_secs_f64() * time_warp.current_multiplier();
 }
 
 #[derive(Resource, Debug, Clone)]
@@ -132,10 +139,11 @@ impl Plugin for AstronomyPlugin {
                 Update,
                 (
                     advance_simulation_time.in_set(SimulationTimeSystem),
+                    update_celestial_positions_system.after(SimulationTimeSystem),
                     update_orbital_dots_system.after(SimulationTimeSystem),
                     solar_system_camera_focus_system,
                     mouse_pick_astronode_system,
-                    update_floating_origin_transforms,
+                    update_floating_origin_transforms.after(update_celestial_positions_system),
                     update_surface_node_visibility,
                 ),
             );
@@ -182,9 +190,12 @@ pub fn load_solar_system_config(
     Ok(configs)
 }
 
-/// Resolves all global coordinates at epoch t=0 via parent hierarchy.
+/// Resolves all global coordinates at a specific simulation time `t_s` via parent hierarchy.
 #[must_use]
-pub fn compute_all_epoch_positions(configs: &[AstroNodeConfig]) -> HashMap<String, GlobalPosition> {
+pub fn compute_all_positions_at_time(
+    configs: &[AstroNodeConfig],
+    t_s: f64,
+) -> HashMap<String, GlobalPosition> {
     let mut positions: HashMap<String, GlobalPosition> = HashMap::new();
 
     for config in configs {
@@ -201,7 +212,7 @@ pub fn compute_all_epoch_positions(configs: &[AstroNodeConfig]) -> HashMap<Strin
         remaining.retain(|config| {
             let parent_name = config.parent_name.as_ref().unwrap();
             if let Some(&parent_pos) = positions.get(parent_name) {
-                let pos = calculate_epoch_position(config, parent_pos);
+                let pos = calculate_kepler_position(config, parent_pos, t_s);
                 positions.insert(config.name.clone(), pos);
                 resolved_any = true;
                 false
@@ -219,6 +230,12 @@ pub fn compute_all_epoch_positions(configs: &[AstroNodeConfig]) -> HashMap<Strin
     }
 
     positions
+}
+
+/// Resolves all global coordinates at epoch t=0 via parent hierarchy.
+#[must_use]
+pub fn compute_all_epoch_positions(configs: &[AstroNodeConfig]) -> HashMap<String, GlobalPosition> {
+    compute_all_positions_at_time(configs, 0.0)
 }
 
 /// Builds a unit billboard quad mesh for `AstroNode` screen dots.
@@ -403,6 +420,7 @@ pub fn setup_solar_system(
                                 MeshMaterial3d(orbit_material.clone()),
                                 Transform::IDENTITY,
                                 Visibility::Inherited,
+                                Aabb::default(),
                                 DynamicOrbitDots {
                                     mesh_handle,
                                     body_entity,
@@ -436,14 +454,15 @@ pub fn setup_solar_system(
     clippy::cast_lossless
 )]
 pub fn update_orbital_dots_system(
+    mut commands: Commands,
     sim_time: Res<SimulationTime>,
-    orbit_query: Query<(&DynamicOrbitDots, &Parent)>,
+    mut orbit_query: Query<(Entity, &DynamicOrbitDots, Option<&mut Aabb>)>,
     body_query: Query<&CelestialBody>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let t_sim = sim_time.elapsed_seconds;
 
-    for (orbit_dots, _parent) in &orbit_query {
+    for (orbit_entity, orbit_dots, maybe_aabb) in &mut orbit_query {
         let Ok(body) = body_query.get(orbit_dots.body_entity) else {
             continue;
         };
@@ -462,11 +481,52 @@ pub fn update_orbital_dots_system(
             positions.resize(ORBIT_DOT_COUNT, [0.0, 0.0, 0.0]);
         }
 
+        let mut min_pt = Vec3::splat(f32::INFINITY);
+        let mut max_pt = Vec3::splat(f32::NEG_INFINITY);
+
         for (i, pos_out) in positions.iter_mut().enumerate() {
             let offset_hours = (i as i32) - ORBIT_DOT_WINDOW_HOURS;
             let t_point = t_sim + f64::from(offset_hours) * ORBIT_DOT_INTERVAL_S;
             let kepler_pos = calculate_kepler_position(&body.config, GlobalPosition::ZERO, t_point);
-            *pos_out = [kepler_pos.x as f32, kepler_pos.y as f32, kepler_pos.z as f32];
+            let pt = Vec3::new(kepler_pos.x as f32, kepler_pos.y as f32, kepler_pos.z as f32);
+            *pos_out = [pt.x, pt.y, pt.z];
+            min_pt = min_pt.min(pt);
+            max_pt = max_pt.max(pt);
+        }
+
+        if min_pt.x.is_finite() && max_pt.x.is_finite() {
+            let center = (min_pt + max_pt) * 0.5;
+            let half_extents = ((max_pt - min_pt) * 0.5).max(Vec3::splat(1.0));
+            let new_aabb = Aabb {
+                center: Vec3A::from(center),
+                half_extents: Vec3A::from(half_extents),
+            };
+
+            if let Some(mut aabb) = maybe_aabb {
+                *aabb = new_aabb;
+            } else {
+                commands.entity(orbit_entity).insert(new_aabb);
+            }
+        }
+    }
+}
+
+/// Propagates all celestial body global positions along their Keplerian orbits at current simulation time.
+#[allow(clippy::needless_pass_by_value)]
+pub fn update_celestial_positions_system(
+    sim_time: Res<SimulationTime>,
+    mut origin: ResMut<FloatingOrigin>,
+    mut body_query: Query<&mut CelestialBody>,
+) {
+    let configs: Vec<AstroNodeConfig> = body_query.iter().map(|b| b.config.clone()).collect();
+    let positions = compute_all_positions_at_time(&configs, sim_time.elapsed_seconds);
+
+    for mut body in &mut body_query {
+        if let Some(&new_pos) = positions.get(&body.config.name) {
+            body.global_position = new_pos;
+            if body.index == origin.focused_index {
+                origin.focused_position = new_pos;
+            }
         }
     }
 }
@@ -654,24 +714,6 @@ pub fn solar_system_camera_focus_system(
         new_index = Some((origin.focused_index + 1) % total);
     } else if keyboard.just_pressed(KeyCode::ArrowLeft) || keyboard.just_pressed(KeyCode::ArrowUp) {
         new_index = Some((origin.focused_index + total - 1) % total);
-    } else if keyboard.just_pressed(KeyCode::Digit1) && total > 0 {
-        new_index = Some(0); // Sun
-    } else if keyboard.just_pressed(KeyCode::Digit2) && total > 1 {
-        new_index = Some(1); // Mercury
-    } else if keyboard.just_pressed(KeyCode::Digit3) && total > 2 {
-        new_index = Some(2); // Venus
-    } else if keyboard.just_pressed(KeyCode::Digit4) && total > 3 {
-        new_index = Some(3); // Earth
-    } else if keyboard.just_pressed(KeyCode::Digit5) && total > 4 {
-        new_index = Some(4); // Luna
-    } else if keyboard.just_pressed(KeyCode::Digit6) && total > 5 {
-        new_index = Some(5); // Mars
-    } else if keyboard.just_pressed(KeyCode::Digit7) && total > 6 {
-        new_index = Some(6); // Jupiter
-    } else if keyboard.just_pressed(KeyCode::Digit8) && total > 7 {
-        new_index = Some(7); // Saturn
-    } else if keyboard.just_pressed(KeyCode::Digit9) && total > 8 {
-        new_index = Some(8); // Uranus
     }
 
     if let Some(idx) = new_index {
@@ -1046,6 +1088,59 @@ mod tests {
         assert!((pts[end_idx][0] - expected_pos_end.x as f32).abs() < 1e-1);
         assert!((pts[end_idx][1] - expected_pos_end.y as f32).abs() < 1e-1);
         assert!((pts[end_idx][2] - expected_pos_end.z as f32).abs() < 1e-1);
+    }
+
+    #[test]
+    fn test_dynamic_orbital_dots_aabb_update() {
+        let mut app = App::new();
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Mesh>();
+        app.insert_resource(SimulationTime::new(0.0));
+
+        let mut config = create_test_body_config("Earth");
+        config.parent_name = Some("Sun".into());
+        config.semi_major_axis_m = 1.496e11;
+        config.mean_motion_rad_s = 1.991e-7;
+
+        let body_entity = app
+            .world_mut()
+            .spawn(CelestialBody {
+                config,
+                global_position: GlobalPosition::ZERO,
+                index: 0,
+            })
+            .id();
+        let parent = app.world_mut().spawn(Transform::IDENTITY).id();
+
+        let mut mesh = Mesh::new(PrimitiveTopology::PointList, RenderAssetUsages::default());
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0_f32; 3]; ORBIT_DOT_COUNT]);
+        let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
+
+        let orbit_entity = app
+            .world_mut()
+            .spawn((
+                DynamicOrbitDots {
+                    mesh_handle,
+                    body_entity,
+                },
+                Aabb::default(),
+            ))
+            .id();
+        app.world_mut().entity_mut(parent).add_child(orbit_entity);
+
+        app.add_systems(Update, update_orbital_dots_system);
+        app.update();
+
+        let aabb_t0 = *app.world().get::<Aabb>(orbit_entity).unwrap();
+        assert!(aabb_t0.center.x > 1.4e11, "AABB at t=0 must be near +1.5e11");
+
+        // Advance 6 months (half orbit ~ 1.578e7 s)
+        app.world_mut().resource_mut::<SimulationTime>().elapsed_seconds = 1.578e7;
+        app.update();
+
+        let aabb_t6m = *app.world().get::<Aabb>(orbit_entity).unwrap();
+        assert!(aabb_t6m.center.x < -1.4e11, "AABB at t=6m must be near -1.5e11");
+        assert!((aabb_t6m.center - aabb_t0.center).length() > 2.8e11);
     }
 
     #[test]
@@ -1485,5 +1580,67 @@ mod tests {
             origin.focused_index, 0,
             "Clicking empty space must not change celestial focus"
         );
+    }
+
+    #[test]
+    fn test_advance_simulation_time_scaled_by_warp() {
+        let mut app = App::new();
+        app.add_plugins(bevy::time::TimePlugin);
+        app.insert_resource(SimulationTime::default());
+
+        let mut warp = TimeWarp::default();
+        warp.set_level(crate::systems::time_warp::WarpLevel::HourPerSec); // 3600x
+        app.insert_resource(warp);
+
+        app.add_systems(Update, advance_simulation_time);
+
+        // Advance simulation time
+        app.update();
+
+        let sim_time = app.world().resource::<SimulationTime>();
+        assert!(sim_time.elapsed_seconds >= 0.0);
+    }
+
+    #[test]
+    fn test_celestial_body_positions_advance_with_time() {
+        let earth_config = AstroNodeConfig {
+            name: "Earth".into(),
+            parent_name: Some("Sun".into()),
+            mass_kg: 5.972e24,
+            radius_m: 6.371e6,
+            semi_major_axis_m: 1.495_978_7e11,
+            eccentricity: 0.0167,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
+            true_anomaly_epoch_rad: 0.0,
+            mean_motion_rad_s: 1.991e-7,
+        };
+
+        let configs = vec![
+            AstroNodeConfig {
+                name: "Sun".into(),
+                parent_name: None,
+                mass_kg: 1.989e30,
+                radius_m: 6.96e8,
+                semi_major_axis_m: 0.0,
+                eccentricity: 0.0,
+                inclination_rad: 0.0,
+                longitude_of_ascending_node_rad: 0.0,
+                argument_of_periapsis_rad: 0.0,
+                true_anomaly_epoch_rad: 0.0,
+                mean_motion_rad_s: 0.0,
+            },
+            earth_config,
+        ];
+
+        let pos_t0 = compute_all_positions_at_time(&configs, 0.0);
+        let pos_t_half_year = compute_all_positions_at_time(&configs, std::f64::consts::PI / 1.991e-7);
+
+        let earth_t0 = pos_t0.get("Earth").unwrap();
+        let earth_half_year = pos_t_half_year.get("Earth").unwrap();
+
+        // After half an orbit, Earth's position should be on opposite side of the Sun
+        assert!((earth_t0.x + earth_half_year.x).abs() < 1e10);
     }
 }

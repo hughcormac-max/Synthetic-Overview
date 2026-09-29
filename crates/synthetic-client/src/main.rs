@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bevy::render::camera::ClearColorConfig;
 use globe::viewport::MainViewPanelMarker;
 use globe::GlobePlugin;
-use systems::{AstronomyPlugin, UiPlugin};
+use systems::{AstronomyPlugin, TimeWarpPlugin, UiPlugin};
 
 #[derive(Component)]
 pub struct UiCameraMarker;
@@ -26,6 +26,7 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(GlobePlugin)
         .add_plugins(AstronomyPlugin)
+        .add_plugins(TimeWarpPlugin)
         .add_plugins(UiPlugin)
         .add_systems(Startup, setup_ui)
         .add_systems(
