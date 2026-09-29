@@ -42,8 +42,8 @@ The current Poisson sphere surface generation uses quadratic dart-throwing (`O(N
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-PHY-004: Surface Topography](../../../docs/ssot/SSOT-PHY-004-AstroNode-Architecture.md) — Spherical Fibonacci lattice formulas and golden test vectors.
-- [SSOT-SYS-000: SI Units](../../../docs/ssot/SSOT-SYS-000-SI-Units.md) — Canonical SI units and f64 determinism.
+- [SSOT-PHY-004: Surface Topography](../ssot/SSOT-PHY-004-AstroNode-Architecture.md) — Spherical Fibonacci lattice formulas and golden test vectors.
+- [SSOT-SYS-000: SI Units](../ssot/SSOT-SYS-000-SI-Units.md) — Canonical SI units and f64 determinism.
 
 ### 2.2 Public API / Service Signatures
 ```rust

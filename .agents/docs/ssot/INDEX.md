@@ -1,6 +1,6 @@
 # Master Domain Knowledge & SSOT Index
 
-> **Directory:** `docs/ssot/`
+> **Directory:** `.agents/docs/ssot/`
 > **Architecture Principle:** Strict Downward Dependency — SSOT files are pure, authoritative Tier 0 domain truths. Implementation code and plans cite SSOTs, but SSOTs remain decoupled from codebase file paths. All mathematical models enforce Zero-LaTeX plain-text notation and fixed-point integer determinism.
 
 ---
@@ -9,9 +9,9 @@
 
 The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, formulas, logic loops, constants, and known hallucination traps.
 
-- **Tier 0 (Domain Truth — `docs/ssot/SSOT-NNNN.md`):** Pure domain truth, formulas, constants, and golden test vectors. Zero upward knowledge of codebase files.
-- **Tier 1 (Technical Plans — `.agents/plans/active/`):** Cites Tier 0 SSOT specifications before code is written.
-- **Tier 2 (Source Implementation — `src/`):** Code and unit tests cite Tier 0 SSOT documents and assert against golden test vectors.
+- **Tier 0 (Domain Truth — `.agents/docs/ssot/SSOT-NNNN.md`):** Pure domain truth, formulas, constants, and golden test vectors. Zero upward knowledge of codebase files.
+- **Tier 1 (Technical Plans — `.agents/docs/plans/`):** Cites Tier 0 SSOT specifications before code is written.
+- **Tier 2 (Source Implementation — `src/` or `crates/`):** Code and unit tests cite Tier 0 SSOT documents and assert against golden test vectors.
 
 ---
 

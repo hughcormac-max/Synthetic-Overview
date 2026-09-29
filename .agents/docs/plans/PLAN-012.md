@@ -41,9 +41,9 @@ The game requires a deterministic representation of celestial bodies (`AstroNode
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-PHY-001: Astrodynamics & Topography](../../../docs/ssot/SSOT-PHY-001-Astrodynamics.md) — Constants and Keplerian formulas.
-- [SSOT-PHY-004: AstroNode Architecture](../../../docs/ssot/SSOT-PHY-004-AstroNode-Architecture.md) — AstroNode definitions and Poisson sphere distribution invariant.
-- [SSOT-SYS-000: SI Units](../../../docs/ssot/SSOT-SYS-000-SI-Units.md) — f64 Determinism and SI baseline types.
+- [SSOT-PHY-001: Astrodynamics & Topography](../ssot/SSOT-PHY-001-Astrodynamics.md) — Constants and Keplerian formulas.
+- [SSOT-PHY-004: AstroNode Architecture](../ssot/SSOT-PHY-004-AstroNode-Architecture.md) — AstroNode definitions and Poisson sphere distribution invariant.
+- [SSOT-SYS-000: SI Units](../ssot/SSOT-SYS-000-SI-Units.md) — f64 Determinism and SI baseline types.
 
 ### 2.2 Domain Types & Schemas
 ```rust

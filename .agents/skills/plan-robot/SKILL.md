@@ -1,65 +1,53 @@
 ---
 name: plan-robot
-description: Architect technical contracts, Rust ECS structs, and invariants for Phase 2 of PLAN-XXX.md, orchestrate adversarial review via the interrogator subagent, refine the specification, and request human approval.
+description: Use this skill after /plan-human to fill in the technical specifications, contracts, file-by-file mapping, unit test targets, and atomic steps (<= 50 lines each) in an existing plan.
 ---
 
 # `/plan-robot` Workflow Trajectory
 
 > **Workflow Command:** `/plan-robot`
-> **Purpose:** Architect technical contracts, Rust ECS data structures, and mathematical invariants (Phase 2 of `PLAN-XXX.md`), orchestrate an adversarial technical critique via the `interrogator` subagent, refine the plan, and present it for human approval.
+> **Purpose:** Ingest a human-aligned plan and formulate technical contracts, schemas, module mappings, and atomic tasks with a strict limit: **any step larger than approximately 50 lines must be decomposed further**.
 
 ---
 
 ## 🎯 Workflow Execution Steps
 
-### Phase 1: Functional Plan Ingestion & Codebase Research
+### Phase 1: Ingest Aligned Plan & Domain Truth
 
-1. **Ingest Active Plan:**
-   - Locate and read the target active plan in `.agents/plans/active/PLAN-XXX.md`.
-   - Confirm that Phase 1 (Sections 1 & 2) has defined the problem statement, core objectives, exclusions, and functional acceptance criteria.
-2. **Ground Against Domain SSOT & Codebase:**
-   - Review relevant immutable truth documents in `docs/ssot/SSOT-NNNN.md`.
-   - Inspect existing Rust crates, modules, ECS queries, and data models to map dependencies and avoid architectural collisions.
+1. **Locate Target Plan:**
+   - Read `.agents/docs/plans/PLAN-XXX.md`.
+   - Verify that Part 1 (Human Problem Alignment) is populated and approved.
+2. **Scan Codebase & Domain References:**
+   - Query `.agents/docs/ssot/` for applicable domain truths, formulas, constants, or golden vectors.
+   - Inspect existing codebase interfaces, data structures, and caller sites.
+   - Enforce master architectural rules from [AGENTS.md](../../../AGENTS.md).
 
-### Phase 2: Technical Design & Invariants Formulation
+### Phase 2: Populate Part 2 (Robot Technical Requirements)
 
-Populate Phase 2 of `PLAN-XXX.md`:
+1. **Section 2.1 Authoritative Domain References:**
+   - Cite relevant `.agents/docs/ssot/SSOT-NNNN.md` documents.
+2. **Section 2.2 Data Types & Schemas:**
+   - Declare exact, strictly-typed public schemas, interfaces, and immutable data models.
+3. **Section 2.3 Public API / Service Signatures:**
+   - Define exact function signatures, argument types, and explicit Result/Error types.
+4. **Section 2.4 File-by-File Module Mapping:**
+   - Group by layer (Domain, Application, Infrastructure, Presentation) with exact target file paths.
+5. **Section 2.5 Atomic Implementation Slices (STRICT <= ~50 LINES RULE):**
+   - Break implementation tasks into an ordered checklist (`- [ ]`).
+   - **MANDATORY INVARIANT:** Each atomic step must target a single file or isolated unit and represent no more than ~50 lines of code changes. Any task estimated or drafted at > 50 lines must be split into sub-steps before finalizing.
+6. **Section 2.6 Unit Test Targets & Verification Commands:**
+   - List each module alongside its test file and test scenarios (including edge cases and golden vectors).
+   - Configure active verification commands matching project stack (typecheck, lint, test, build).
 
-1. **Section 3: Technical Contracts & Invariants:**
-   - **3.1 Authoritative Domain References:** Link cited SSOT documents, formulas, and golden vectors.
-   - **3.2 Domain Types, ECS Components & Schemas:** Specify exact Rust structs, enums, component packing, and resource definitions adhering to Data-Oriented Design.
-   - **3.3 Public API / System Signatures:** Define Bevy ECS system signatures, query filters, and schedule placements.
-   - **3.4 Mathematical Invariants & Determinism Guarantees:** Define all precision tolerances, determinism rules, and invariant formulas using plain-text ASCII math (Zero-LaTeX).
-   - **3.5 Layer Boundary Mapping:** Map crates and module boundaries.
-2. **Section 4: Implementation Steps:**
-   - Break down implementation into atomic, testable steps with checkable boxes (`- [ ]`).
-   - Sequence tasks: contracts/types first, domain/property tests second, systems/adapters third, integration fourth, and full regression fifth.
-3. **Section 5: Verification & Criteria:**
-   - Define measurable targets, property-based test assertions, and exact verification commands (`cargo check`, `cargo clippy`, `cargo test`).
+### Phase 3: Technical Summary & Developer Approval
 
-### Phase 3: Adversarial Review Gate (via `interrogator`)
-
-Delegate an adversarial technical audit to the `interrogator` subagent ([.agents/subagents/interrogator.md](../../subagents/interrogator.md)) in read-only audit mode (`mode: inherit`):
-
-1. **Invoke Interrogator Subagent (`interrogator`):**
-   - Dispatch the `interrogator` subagent via `invoke_subagent`.
-   - Provide the drafted Phase 2 sections of `PLAN-XXX.md`.
-   - Instruct the `interrogator` to scrutinize:
-     - **ECS Cache-Misses & Layouts:** Suboptimal component packing, pointer indirection, archetypal churn, and query bottlenecks.
-     - **Floating-Point Determinism:** Order-of-operations drift, non-associative float accumulations, missing epsilon bounds.
-     - **Logic Gaps & Edge Cases:** Boundary singularities, zero division, NaN propagation, unhandled failure paths.
-     - **Zero-LaTeX Compliance:** Ensure pure ASCII math formatting.
-2. **Evaluate Adversarial Critique:**
-   - Await the Interrogator's adversarial report.
-   - Refine and update `PLAN-XXX.md` Sections 3, 4, and 5 to address all Critical Blockers and valid critiques.
-
-### Phase 4: Executive Summary & Human Approval Gate
-
-1. **Present Technical Architecture in Chat:**
-   - Present a concise executive summary highlighting:
-     - Core technical contracts and ECS component layouts.
-     - Key mathematical invariants and property test plans.
-     - Interrogator findings and resolutions made.
-2. **Await Explicit Human Approval:**
-   - **STRICT HALT:** Do not proceed to `/execute` until the developer reviews and explicitly approves the finalized plan.
-   - Upon developer approval, update frontmatter status to `approved`.
+1. **Update Plan Metadata:**
+   - Set `updated: YYYY-MM-DD`.
+2. **Present Technical Blueprint in Chat:**
+   - Summarize key types, public APIs, affected files, and atomic task breakdowns.
+3. **Approval Gate (HALT):**
+   - **STRICT HALT:** Await explicit developer approval. Upon approval, update frontmatter:
+     ```yaml
+     status: approved
+     ```
+   - Update status in `.agents/docs/plans/INDEX.md` to `approved`.

@@ -18,7 +18,7 @@
 
 | Plan ID | Title | Status | Author | Target Branch | Active Path |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| *No active plans currently in flight* | — | — | — | — | `.agents/plans/active/` |
+| *No active plans currently in flight* | — | — | — | — | `.agents/docs/plans/` |
 
 ---
 

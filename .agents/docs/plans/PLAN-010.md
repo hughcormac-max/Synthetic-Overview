@@ -37,7 +37,7 @@ The user has requested interactive camera controls for the 3D planetary globe vi
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-UIX-001: UI Architecture, Viewport State Machine & Terminal Grammar](../../../docs/ssot/SSOT-UIX-001-Presentation.md) — *Specifies the Viewport State Machine and semantic zoom altitude thresholds.*
+- [SSOT-UIX-001: UI Architecture, Viewport State Machine & Terminal Grammar](../ssot/SSOT-UIX-001-Presentation.md) — *Specifies the Viewport State Machine and semantic zoom altitude thresholds.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

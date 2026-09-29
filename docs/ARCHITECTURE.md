@@ -63,6 +63,6 @@ This project is built around **strict layer decoupling**, **contract-first inter
 
 ## 📚 5. Architecture Decision Records (ADRs) & Knowledge Vault
 
-- Domain Knowledge & Specifications: [docs/ssot/INDEX.md](ssot/INDEX.md)
-- Research Reports Ledger: [docs/research/INDEX.md](research/INDEX.md)
-- Architectural Decision Records: [.agents/plans/archive/INDEX.md](../.agents/plans/archive/INDEX.md)
+- Domain Knowledge & Specifications: [.agents/docs/ssot/INDEX.md](../.agents/docs/ssot/INDEX.md)
+- Research Reports Ledger: [.agents/docs/research/INDEX.md](../.agents/docs/research/INDEX.md)
+- Master Plan Ledger: [.agents/docs/plans/INDEX.md](../.agents/docs/plans/INDEX.md)

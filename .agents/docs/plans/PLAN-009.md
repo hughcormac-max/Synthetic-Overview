@@ -38,8 +38,8 @@ The user has requested the implementation of the planetary globe view (as define
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-UIX-001: UI Architecture, Viewport State Machine & Terminal Grammar](../../../docs/ssot/SSOT-UIX-001-Presentation.md) — *Specifies the Docked 4-Pane Workspace and the dual-instance viewport (specifically `VIEW_PLANETARY_GLOBE`).*
-- [SSOT-PHY-004: Spherical Fibonacci Surface Topography & Spatial Indexing](../../../docs/ssot/SSOT-PHY-004-Surface-Topography.md) — *Specifies the Golden-Angle Spherical Fibonacci spiral generation.*
+- [SSOT-UIX-001: UI Architecture, Viewport State Machine & Terminal Grammar](../ssot/SSOT-UIX-001-Presentation.md) — *Specifies the Docked 4-Pane Workspace and the dual-instance viewport (specifically `VIEW_PLANETARY_GLOBE`).*
+- [SSOT-PHY-004: Spherical Fibonacci Surface Topography & Spatial Indexing](../ssot/SSOT-PHY-004-Surface-Topography.md) — *Specifies the Golden-Angle Spherical Fibonacci spiral generation.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

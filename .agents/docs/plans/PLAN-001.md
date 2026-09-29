@@ -38,8 +38,8 @@ The project requires a concrete decision on the core programming language, game 
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-001: Simulation Architecture](../../../docs/ssot/SSOT-001-Simulation-Architecture.md)
-- [SSOT-008: UI & Visualization Architecture](../../../docs/ssot/SSOT-008-UI-Architecture.md)
+- [SSOT-001: Simulation Architecture](../ssot/SSOT-001-Simulation-Architecture.md)
+- [SSOT-008: UI & Visualization Architecture](../ssot/SSOT-008-UI-Architecture.md)
 
 ### 2.2 Domain Types & Schemas
 ```rust

@@ -4,7 +4,7 @@
     "**/dist": true,
     "**/build": true,
     "**/.git": true,
-    "**/.agents/plans/archive/**": false
+    "**/.agents/docs/**": false
   },
   "files.watcherExclude": {
     "**/node_modules/**": true,
@@ -20,8 +20,7 @@
   "antigravity.sandbox.enabled": true,
   "antigravity.permissions.promptOnDestructiveActions": true,
   "antigravity.rules.enforcement": "strict",
-  "antigravity.plans.activeDirectory": ".agents/plans/active",
-  "antigravity.plans.archiveDirectory": ".agents/plans/archive",
+  "antigravity.plans.directory": ".agents/docs/plans",
   "git.autofetch": false,
   "git.refreshOnWindowFocus": false
 }

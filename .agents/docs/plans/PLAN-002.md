@@ -38,7 +38,7 @@ We need to establish the foundational "Micro" scale of the simulation: the Node/
 ## ðŸ“ 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-001: Simulation Architecture](../../../docs/ssot/SSOT-001-Simulation-Architecture.md) â€” *Stock, Edge, and Converter definitions, Two-Pass Cycle.*
+- [SSOT-001: Simulation Architecture](../ssot/SSOT-001-Simulation-Architecture.md) â€” *Stock, Edge, and Converter definitions, Two-Pass Cycle.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

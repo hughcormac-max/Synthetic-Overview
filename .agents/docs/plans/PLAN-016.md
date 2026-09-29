@@ -37,8 +37,8 @@ The solar system simulation currently relies on a 2D coplanar (ecliptic) lock to
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-PHY-001: 2D Keplerian Astrodynamics, Rocket Mechanics & Orbital Transfers](../../../docs/ssot/SSOT-PHY-001-Astrodynamics.md) — *Will be renamed and updated to remove 2D invariants and introduce 3D transformation matrices.*
-- [SSOT-PHY-004: AstroNode Architecture & Spherical Fibonacci Surface Topography](../../../docs/ssot/SSOT-PHY-004-AstroNode-Architecture.md) — *Will be updated to remove 2D constraints.*
+- [SSOT-PHY-001: 2D Keplerian Astrodynamics, Rocket Mechanics & Orbital Transfers](../ssot/SSOT-PHY-001-Astrodynamics.md) — *Will be renamed and updated to remove 2D invariants and introduce 3D transformation matrices.*
+- [SSOT-PHY-004: AstroNode Architecture & Spherical Fibonacci Surface Topography](../ssot/SSOT-PHY-004-AstroNode-Architecture.md) — *Will be updated to remove 2D constraints.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

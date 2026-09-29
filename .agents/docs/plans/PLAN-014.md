@@ -39,9 +39,9 @@ The current visualization focuses on a single isolated planetary globe at the or
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-PHY-001: 2D Keplerian Astrodynamics](../../../docs/ssot/SSOT-PHY-001-Astrodynamics.md) — *Coplanar Keplerian position formulas.*
-- [SSOT-PHY-004: AstroNode Architecture](../../../docs/ssot/SSOT-PHY-004-AstroNode-Architecture.md) — *Spherical Fibonacci Lattice.*
-- [SSOT-UIX-001: Presentation Layer](../../../docs/ssot/SSOT-UIX-001-Presentation.md) — *Semantic zoom thresholds.*
+- [SSOT-PHY-001: 2D Keplerian Astrodynamics](../ssot/SSOT-PHY-001-Astrodynamics.md) — *Coplanar Keplerian position formulas.*
+- [SSOT-PHY-004: AstroNode Architecture](../ssot/SSOT-PHY-004-AstroNode-Architecture.md) — *Spherical Fibonacci Lattice.*
+- [SSOT-UIX-001: Presentation Layer](../ssot/SSOT-UIX-001-Presentation.md) — *Semantic zoom thresholds.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

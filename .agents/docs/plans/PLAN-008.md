@@ -37,9 +37,9 @@ The project currently lacks a universal grounding document for its units of meas
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-SYS-000-SI-Units.md](../../../docs/ssot/SSOT-SYS-000-SI-Units.md) — *Will serve as the master reference for base units (m, kg, s), derived units (N, J, W, m/s, m/s^2), scaling factors, and integer/fixed-point standard conversions.*
-- [SSOT-PHY-001-Astrodynamics.md](../../../docs/ssot/SSOT-PHY-001-Astrodynamics.md) — *Keplerian mechanics, Tsiolkovsky rocket equation (`dv = v_e * ln(m0/mf)` represented without LaTeX), and coplanar 2D vectors.*
-- [SSOT-PHY-004-Surface-Topography.md](../../../docs/ssot/SSOT-PHY-004-Surface-Topography.md) — *Golden ratio math, spherical surface distribution.*
+- [SSOT-SYS-000-SI-Units.md](../ssot/SSOT-SYS-000-SI-Units.md) — *Will serve as the master reference for base units (m, kg, s), derived units (N, J, W, m/s, m/s^2), scaling factors, and integer/fixed-point standard conversions.*
+- [SSOT-PHY-001-Astrodynamics.md](../ssot/SSOT-PHY-001-Astrodynamics.md) — *Keplerian mechanics, Tsiolkovsky rocket equation (`dv = v_e * ln(m0/mf)` represented without LaTeX), and coplanar 2D vectors.*
+- [SSOT-PHY-004-Surface-Topography.md](../ssot/SSOT-PHY-004-Surface-Topography.md) — *Golden ratio math, spherical surface distribution.*
 
 ### 2.2 Domain Contracts & Formulas (Zero-LaTeX)
 - **Rocket Equation (Tsiolkovsky):** `delta_v = v_e * ln(m_initial / m_final)`

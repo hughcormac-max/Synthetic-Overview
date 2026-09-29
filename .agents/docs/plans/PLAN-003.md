@@ -38,7 +38,7 @@ The user wants to implement the surface-level geographic abstractions of astrono
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-003: Physical Architecture & Interplanetary Logistics](../../../docs/ssot/SSOT-003-Physical-Architecture.md) — *Physical surface clustering.*
+- [SSOT-003: Physical Architecture & Interplanetary Logistics](../ssot/SSOT-003-Physical-Architecture.md) — *Physical surface clustering.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

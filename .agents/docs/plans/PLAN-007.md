@@ -19,7 +19,7 @@ branch: "main"
 ## 🎯 1. Intent & Boundaries
 
 ### 1.1 Problem Statement
-The current `docs/ssot/` library consists of 8 documents that function as high-level narrative game-design pitches rather than authoritative, deterministic Tier 0 specifications. AI coding agents attempting to implement systems from these documents are forced to hallucinate memory layouts (ECS), tick-loop integrations, and fixed-point mathematical formulas. Furthermore, the documents suffer from domain overlap (e.g., cyberwarfare mechanics split across SSOT-002 and SSOT-006), terminology collisions (meso-entity presence), and architectural misalignment regarding spatial grids (we will pivot away from H3 and standardize on Fibonacci spheres).
+The current `.agents/docs/ssot/` library consists of 8 documents that function as high-level narrative game-design pitches rather than authoritative, deterministic Tier 0 specifications. AI coding agents attempting to implement systems from these documents are forced to hallucinate memory layouts (ECS), tick-loop integrations, and fixed-point mathematical formulas. Furthermore, the documents suffer from domain overlap (e.g., cyberwarfare mechanics split across SSOT-002 and SSOT-006), terminology collisions (meso-entity presence), and architectural misalignment regarding spatial grids (we will pivot away from H3 and standardize on Fibonacci spheres).
 
 ### 1.2 Core Objectives
 - Refactor the flat `SSOT-00X` namespace into a Domain-Prefixed Taxonomy (e.g., `SSOT-SYS-*`, `SSOT-PHY-*`, `SSOT-CYB-*`) to prevent context fragmentation for specialized agents.

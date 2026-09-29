@@ -1,43 +1,57 @@
 ---
 name: plan-human
-description: Define functional intent, scope boundaries, user stories, and acceptance criteria (Phase 1 of PLAN-XXX.md) prior to technical design.
+description: Use this skill when initiating a new feature, refactor, or bugfix to align the user-facing problem, objectives, non-goals, user stories, and acceptance criteria before technical specification.
 ---
 
 # `/plan-human` Workflow Trajectory
 
 > **Workflow Command:** `/plan-human`
-> **Purpose:** Establish the functional specification, problem boundaries, user experience scenarios, and acceptance criteria (Phase 1 of `PLAN-XXX.md`) before initiating technical architecture.
+> **Purpose:** Align the human-facing problem statement, user requirements, user stories, and acceptance criteria in Part 1 of a new or existing plan specification.
 
 ---
 
 ## 🎯 Workflow Execution Steps
 
-### Phase 1: Scope Discovery & Identification
+### Phase 1: Context Gathering & Clarification
 
-1. **Clarify Functional Goals:**
-   - Review developer requirements, user requests, or referenced research documents (`docs/research/` or `docs/ssot/`).
-   - Identify user workflows, expected behavioral outcomes, and boundary conditions.
+1. **Understand Problem & User Context:**
+   - Engage with the user to clarify the core user problem, desired experience, and specific workflows.
+   - Clarify edge cases, user pain points, and explicit boundaries.
 2. **Determine Plan ID:**
-   - Inspect `.agents/plans/active/` and `.agents/plans/archive/INDEX.md` to assign the next sequential plan identifier (e.g., `PLAN-018`).
+   - Read `.agents/docs/plans/INDEX.md` to find existing plans.
+   - Determine the next sequential plan ID (e.g., `PLAN-001`). If targeting an existing draft, reuse that ID.
 
-### Phase 2: Scaffold & Draft Phase 1 Specification
+### Phase 2: Draft Part 1 (Human Problem Alignment)
 
-1. **Initialize Plan File:**
-   - Copy [.agents/skills/plan-human/resources/TEMPLATE.md](resources/TEMPLATE.md) to `.agents/plans/active/PLAN-XXX.md`.
-2. **Draft Functional Specification (Sections 1 & 2):**
-   - **Section 1: Intent & Boundaries:**
-     - **1.1 Problem Statement:** Articulate the exact problem, user pain point, or capability gap being addressed.
-     - **1.2 Core Objectives:** List discrete, measurable goals and capabilities to be unlocked.
-     - **1.3 Non-Goals & Exclusions:** Explicitly enumerate items out of scope to bound development.
-   - **Section 2: Functional Acceptance Criteria & User Scenarios:**
-     - **2.1 User Scenarios & Core Workflows:** Detail step-by-step user interaction stories and behavioral sequences.
-     - **2.2 Functional Acceptance Criteria:** Define clear, measurable acceptance criteria from an end-user / caller perspective.
-3. **Preserve Phase 2 Placeholders:**
-   - Leave Sections 3, 4, 5, and 6 unpopulated for technical design by `/plan-robot`.
+1. **Initialize or Update Plan File:**
+   - Copy `.agents/skills/plan/resources/TEMPLATE.md` to `.agents/docs/plans/PLAN-XXX.md` (if new).
+   - Set YAML frontmatter:
+     ```yaml
+     ---
+     id: PLAN-XXX
+     title: "[Short, Descriptive Title]"
+     status: draft
+     author: "[Author / Agent Name]"
+     created: YYYY-MM-DD
+     updated: YYYY-MM-DD
+     branch: "[branch-name]"
+     ---
+     ```
+2. **Populate Part 1 Sections Exclusively:**
+   - **Section 1.1 Problem Statement:** Clear description of user problem, friction point, or opportunity.
+   - **Section 1.2 Core Objectives:** Concrete capabilities unlocked from the user or developer perspective.
+   - **Section 1.3 Non-Goals & Exclusions:** Explicit out-of-scope boundaries and deferred work.
+   - **Section 1.4 User Stories & Interaction Journeys:** Walkthrough of key scenarios and workflows.
+   - **Section 1.5 Acceptance Criteria:** Black-box observable criteria that define user success.
+   - **Section 1.6 Edge Cases & Boundary Behaviors:** User-facing error messaging, empty states, limits.
+3. **Leave Part 2 as Placeholder:**
+   - Leave Part 2 (Robot Technical Requirements) marked as `[To be populated by /plan-robot]`.
 
-### Phase 3: Alignment & Review Gate
+### Phase 3: Synchronize Ledger & Request Review
 
-1. **Present Functional Summary in Chat:**
-   - Highlight the problem statement, objectives, exclusions, and acceptance criteria.
-2. **Handoff to Technical Planning:**
-   - Prompt the user to confirm the functional scope, then proceed to run `/plan-robot` to architect the technical design, data types, and invariants.
+1. **Register or Update in Ledger:**
+   - Ensure an entry exists in `.agents/docs/plans/INDEX.md` with status `draft`.
+2. **Present Human Summary to User:**
+   - Present a concise summary in chat highlighting problem statement, core objectives, non-goals, and acceptance criteria.
+3. **Review Gate (HALT):**
+   - **PAUSE:** Await user confirmation before invoking `/plan-robot`.

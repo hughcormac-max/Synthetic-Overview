@@ -40,7 +40,7 @@ The current UI/Rendering stack relies on Tauri, React, and Deck.gl. While functi
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-008: UI & Visualization Architecture](../../../docs/ssot/SSOT-008-UI-Architecture.md) — *Defines the "Cyber-Tactical OS" widget/workspace interface and decoupled spatial instances.*
+- [SSOT-008: UI & Visualization Architecture](../ssot/SSOT-008-UI-Architecture.md) — *Defines the "Cyber-Tactical OS" widget/workspace interface and decoupled spatial instances.*
 
 ### 2.2 Workspace & Cargo Changes
 The project will move from a mixed Node/Cargo workspace to a pure Cargo workspace.

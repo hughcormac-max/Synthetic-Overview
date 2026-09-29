@@ -1,46 +1,60 @@
 ---
 name: execute
-description: Sequentially implement an approved active plan, enforcing property-based testing of invariants at every step using native cargo test and maintaining synchronized checklist progress.
+description: Sequentially implement an approved plan by spawning isolated subagents for file-level tasks, enforcing <= 50 line change thresholds and step-by-step test assertions.
 ---
 
 # `/execute` Workflow Trajectory
 
 > **Workflow Command:** `/execute`
-> **Purpose:** Sequentially implement an approved active plan from `.agents/plans/active/`, enforcing property-based testing of invariants at every step using native `cargo test` and maintaining synchronized checklist progress.
+> **Purpose:** Sequentially implement an approved plan from `.agents/docs/plans/PLAN-XXX.md` by dispatching isolated subagents to implement focused tasks across different code files.
 
 ---
 
-## 🎯 Workflow Execution Steps
+## 🎯 Core Execution Invariants
 
-### Phase 1: Ingest Active Plan
+1. **Strict ~50-Line Slicing Threshold:**
+   - Any implementation task involving more than approximately 50 lines of code changes MUST be split into smaller sub-tasks before code generation begins.
+2. **Subagent Task Isolation:**
+   - Tasks targeting different files or modules are executed by isolated subagents (using `self` with branch/share workspace or focused prompt scopes).
+   - This bounds the blast radius and prevents hallucinated cross-file pollution.
+3. **Step-by-Step Test Assertion:**
+   - Unit tests for step N must pass before proceeding to step N+1.
+   - Checklist checkboxes (`- [x]`) are marked in `.agents/docs/plans/PLAN-XXX.md` as each step is verified.
 
-1. **Load Active Plan:**
-   - Locate the target approved plan in `.agents/plans/active/PLAN-XXX.md`.
-   - Verify that frontmatter status is `approved` or `in-progress`.
-   - Update frontmatter status to `in-progress` if not already set.
+---
 
-### Phase 2: Sequential Step Execution with Invariant Testing (via `implementer`)
+## 🛠️ Execution Protocol
 
-Delegate code implementation to the `implementer` subagent ([.agents/subagents/implementer.md](../../subagents/implementer.md)) in an isolated branch workspace (`mode: branch`):
+### Phase 1: Ingest Approved Plan
 
-1. **Invoke Implementer Subagent (`implementer`):**
-   - Read `.agents/subagents/implementer.md` to ground implementation rules.
-   - Dispatch the `implementer` subagent via `invoke_subagent` (with `Workspace: "branch"`).
-   - Instruct the subagent to:
-     - Ingest `.agents/plans/active/PLAN-XXX.md`.
-     - Sequentially implement each atomic unchecked step (`- [ ]`) adhering strictly to Section 3 contracts, invariants, and [AGENTS.md](../../../AGENTS.md).
-     - **Enforce Property-Based & Invariant Testing:** Author and run hermetic unit and property-based tests verifying mathematical invariants using native `cargo test` after every single step before progressing to the next.
-     - Never advance to Step N+1 if any invariant assertions or unit tests fail in Step N.
-     - Synchronize the plan checklist by ticking off completed steps (`- [x]`).
-2. **Await Completion & Branch Merge:**
-   - Wait for `implementer` to complete all steps and report back.
-   - Ensure changes are merged cleanly into the working branch.
+1. **Locate Target Plan:**
+   - Read `.agents/docs/plans/PLAN-XXX.md`.
+   - Confirm frontmatter `status` is `approved` or `in-progress`.
+   - If `approved`, update frontmatter to `status: in-progress`.
 
-### Phase 3: Final Verification Triad
+### Phase 2: Atomic Task Execution Loop
 
-1. **Run Full Native Verification:**
-   - Run typecheck / compilation: `cargo check --workspace --all-targets`
-   - Run linter: `cargo clippy --workspace --all-targets -- -D warnings`
-   - Run full test suite & property invariant assertions: `cargo test --workspace`
-2. **Review Checklist:**
-   - Ensure all steps are ticked before preparing to trigger `/archive-plan`.
+For each unchecked task (`- [ ]`) in Section 11 of the plan:
+
+1. **Task Size Verification:**
+   - Review the planned task scope. If estimated changes exceed ~50 lines, split the task into multiple discrete sub-tasks in the plan checklist before proceeding.
+2. **Spawn Isolated Subagent:**
+   - Invoke an isolated subagent (`TypeName: "self"` with `Workspace: "branch"` or focused task prompt):
+     - Pass the approved technical contracts from Section 8 & 9.
+     - Pass the specific target file and task instructions.
+     - Enforce the 50-line maximum constraint.
+     - Instruct the subagent to write the implementation code and corresponding unit tests.
+3. **Assert Hermetic Tests & Typechecks:**
+   - Run the project test suite and typechecker on the modified code.
+   - If tests fail, resolve failures within the isolated context before merging.
+4. **Synchronize Checklist Progress:**
+   - Mark the step complete (`- [x]`) in `.agents/docs/plans/PLAN-XXX.md`.
+   - If any runtime architectural pivot occurred, log it immediately in Section 13 (Deviations).
+
+### Phase 3: Final Verification & Pre-Archive Readiness
+
+1. **Run Full Verification:**
+   - Run typecheck, lint, and full regression test suite.
+2. **Confirm Plan Completion:**
+   - Verify all implementation checkboxes in the plan are ticked.
+   - Inform developer that execution is complete and ready for `/archive-plan`.

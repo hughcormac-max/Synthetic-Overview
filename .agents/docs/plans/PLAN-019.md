@@ -60,9 +60,9 @@ Currently, orbital paths are rendered using closed loop line-strip meshes (`ORBI
 *All domain grounding references, types, schemas, and public API signatures must be declared and reviewed here prior to code implementation.*
 
 ### 3.1 Authoritative Domain References
-*Downlink to immutable domain specifications, formulas, constants, and truth tables in `docs/ssot/`:*
-- [SSOT-PHY-001: Astrodynamics](../../../docs/ssot/SSOT-PHY-001-Astrodynamics.md) — Keplerian orbit equations, time elapsed calculation `T_s`.
-- [SSOT-UIX-001: Presentation](../../../docs/ssot/SSOT-UIX-001-Presentation.md) — Dot rendering styling conventions and semantic zooming.
+*Downlink to immutable domain specifications, formulas, constants, and truth tables in `.agents/docs/ssot/`:*
+- [SSOT-PHY-001: Astrodynamics](../ssot/SSOT-PHY-001-Astrodynamics.md) — Keplerian orbit equations, time elapsed calculation `T_s`.
+- [SSOT-UIX-001: Presentation](../ssot/SSOT-UIX-001-Presentation.md) — Dot rendering styling conventions and semantic zooming.
 
 ### 3.2 Domain Types, ECS Components & Schemas
 ```rust

@@ -38,10 +38,10 @@ Following the success of the `Keplerian-Elements` reference architecture, we wil
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-PHY-001: Astrodynamics & Topography](../../../docs/ssot/SSOT-PHY-001-Astrodynamics.md) — Needs updating to remove fixed-point limits and introduce f64.
-- [SSOT-PHY-004: Surface Topography](../../../docs/ssot/SSOT-PHY-004-Surface-Topography.md) — Needs updating to remove Trap 2 (32-bit jitter) and permit unified 3D space with f64.
-- [SSOT-SYS-001: Tick Kernel](../../../docs/ssot/SSOT-SYS-001-Tick-Kernel.md) — Update determinism constraints to enforce IEEE-754 exactness rather than integer-only logic.
-- [SSOT-SYS-000: SI Units](../../../docs/ssot/SSOT-SYS-000-SI-Units.md) — Update base scalar types.
+- [SSOT-PHY-001: Astrodynamics & Topography](../ssot/SSOT-PHY-001-Astrodynamics.md) — Needs updating to remove fixed-point limits and introduce f64.
+- [SSOT-PHY-004: Surface Topography](../ssot/SSOT-PHY-004-Surface-Topography.md) — Needs updating to remove Trap 2 (32-bit jitter) and permit unified 3D space with f64.
+- [SSOT-SYS-001: Tick Kernel](../ssot/SSOT-SYS-001-Tick-Kernel.md) — Update determinism constraints to enforce IEEE-754 exactness rather than integer-only logic.
+- [SSOT-SYS-000: SI Units](../ssot/SSOT-SYS-000-SI-Units.md) — Update base scalar types.
 
 ### 2.2 Domain Types & Schemas
 ```rust

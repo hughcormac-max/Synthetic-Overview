@@ -35,7 +35,7 @@ The solar system visualization operates in 3D, allowing users to navigate around
 ## 📐 2. Technical Contracts & Interfaces
 
 ### 2.1 Authoritative Domain References
-- [SSOT-UIX-001: UI Architecture, Viewport State Machine & Terminal Grammar](../../../docs/ssot/SSOT-UIX-001-Presentation.md) — *Invariant 3: Floating Overlay Constraints. UI components must never block or rigidly divide the fullscreen viewport. Data and controls must float over the spatial view.*
+- [SSOT-UIX-001: UI Architecture, Viewport State Machine & Terminal Grammar](../ssot/SSOT-UIX-001-Presentation.md) — *Invariant 3: Floating Overlay Constraints. UI components must never block or rigidly divide the fullscreen viewport. Data and controls must float over the spatial view.*
 
 ### 2.2 Domain Types & Schemas
 ```rust

@@ -55,7 +55,7 @@ The current camera navigation interactions are suboptimal. The vertical orbiting
 *All domain grounding references, types, schemas, and public API signatures must be declared and reviewed here prior to code implementation.*
 
 ### 3.1 Authoritative Domain References
-*Downlink to immutable domain specifications, formulas, constants, and truth tables in `docs/ssot/`:*
+*Downlink to immutable domain specifications, formulas, constants, and truth tables in `.agents/docs/ssot/`:*
 - N/A - Camera interactions and raycasting do not have specific physics formulas, relying on Bevy's built-in camera projection math.
 
 ### 3.2 Domain Types, ECS Components & Schemas
