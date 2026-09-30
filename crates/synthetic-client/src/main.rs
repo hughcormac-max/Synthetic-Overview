@@ -14,6 +14,32 @@ pub struct UiCameraMarker;
 #[derive(Component)]
 struct FpsText;
 
+#[derive(Resource, Default)]
+pub struct TaskProfiler {
+    pub tasks: std::collections::HashMap<&'static str, Vec<f64>>,
+}
+
+impl TaskProfiler {
+    pub fn record_task(&mut self, name: &'static str, duration_ms: f64) {
+        let history = self.tasks.entry(name).or_insert_with(|| Vec::with_capacity(60));
+        history.push(duration_ms);
+        if history.len() > 60 {
+            history.remove(0);
+        }
+    }
+
+    pub fn get_averages(&self) -> Vec<(&'static str, f64)> {
+        let mut avgs = Vec::new();
+        for (name, history) in &self.tasks {
+            let sum: f64 = history.iter().sum();
+            let avg = if history.is_empty() { 0.0 } else { sum / history.len() as f64 };
+            avgs.push((*name, avg));
+        }
+        avgs.sort_by(|a, b| a.0.cmp(b.0));
+        avgs
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -28,6 +54,7 @@ fn main() {
         .add_plugins(AstronomyPlugin)
         .add_plugins(TimeWarpPlugin)
         .add_plugins(UiPlugin)
+        .init_resource::<TaskProfiler>()
         .add_systems(Startup, setup_ui)
         .add_systems(
             Update,
@@ -64,7 +91,7 @@ pub fn setup_ui(mut commands: Commands) {
         MainViewPanelMarker,
     ));
 
-    // FPS counter in top-right corner
+    // FPS counter in top-left corner
     commands.spawn((
         Text::new("FPS: --"),
         TextFont {
@@ -86,13 +113,23 @@ pub fn setup_ui(mut commands: Commands) {
 #[allow(clippy::needless_pass_by_value)]
 fn update_fps_text(
     diagnostics: Res<DiagnosticsStore>,
+    profiler: Res<TaskProfiler>,
     mut query: Query<&mut Text, With<FpsText>>,
 ) {
     for mut text in &mut query {
+        let mut display_str = String::new();
         if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
             if let Some(value) = fps.smoothed() {
-                **text = format!("FPS: {value:.0}");
+                display_str.push_str(&format!("FPS: {value:.0}"));
             }
+        }
+        
+        for (name, avg_ms) in profiler.get_averages() {
+            display_str.push_str(&format!("\n{name}: {avg_ms:.2} ms"));
+        }
+        
+        if !display_str.is_empty() {
+            **text = display_str;
         }
     }
 }

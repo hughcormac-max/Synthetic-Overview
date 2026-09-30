@@ -443,18 +443,56 @@ pub fn update_celestial_positions_system(
     sim_time: Res<SimulationTime>,
     mut origin: ResMut<FloatingOrigin>,
     mut body_query: Query<&mut CelestialBody>,
+    mut profiler: ResMut<crate::TaskProfiler>,
 ) {
+    let t_s = sim_time.elapsed_seconds;
+    let start = std::time::Instant::now();
+
+    // Clone configs to drop the borrow on body_query, but use string slices for the O(N^2) resolution
     let configs: Vec<AstroNodeConfig> = body_query.iter().map(|b| b.config.clone()).collect();
-    let positions = compute_all_positions_at_time(&configs, sim_time.elapsed_seconds);
+    
+    let mut positions: std::collections::HashMap<&str, GlobalPosition> =
+        std::collections::HashMap::with_capacity(configs.len());
+    let mut remaining: Vec<&AstroNodeConfig> = Vec::with_capacity(configs.len());
+
+    for config in &configs {
+        if config.parent_name.is_none() {
+            positions.insert(config.name.as_str(), GlobalPosition::ZERO);
+        } else {
+            remaining.push(config);
+        }
+    }
+
+    while !remaining.is_empty() {
+        let mut resolved_any = false;
+        remaining.retain(|config| {
+            let parent_name = config.parent_name.as_ref().unwrap();
+            if let Some(&parent_pos) = positions.get(parent_name.as_str()) {
+                let pos = synthetic_core::astronomy::kinematics::calculate_kepler_position(
+                    config, parent_pos, t_s,
+                );
+                positions.insert(config.name.as_str(), pos);
+                resolved_any = true;
+                false
+            } else {
+                true
+            }
+        });
+        if !resolved_any {
+            break;
+        }
+    }
 
     for mut body in &mut body_query {
-        if let Some(&new_pos) = positions.get(&body.config.name) {
+        if let Some(&new_pos) = positions.get(body.config.name.as_str()) {
             body.global_position = new_pos;
             if body.index == origin.focused_index {
                 origin.focused_position = new_pos;
             }
         }
     }
+
+    profiler.record_task("update_celestial_positions", start.elapsed().as_secs_f64() * 1000.0);
 }
 
 /// Floating-origin translation system: offsets all celestial bodies relative to focused body.
@@ -660,7 +698,9 @@ pub fn update_surface_node_visibility(
     body_query: Query<(&CelestialBody, &Transform, &Children)>,
     mut surface_query: Query<&mut Visibility, (With<SurfaceNodesComponent>, Without<AstroDotMarker>)>,
     mut dot_query: Query<&mut Visibility, (With<AstroDotMarker>, Without<SurfaceNodesComponent>)>,
+    mut profiler: ResMut<crate::TaskProfiler>,
 ) {
+    let start = std::time::Instant::now();
     let Ok((cam_transform, projection)) = camera_query.get_single() else {
         return;
     };
@@ -709,6 +749,7 @@ pub fn update_surface_node_visibility(
             }
         }
     }
+    profiler.record_task("update_surface_node_vis", start.elapsed().as_secs_f64() * 1000.0);
 }
 
 #[cfg(test)]
