@@ -68,15 +68,15 @@ All domain research, specifications, planning, and implementations follow this t
    - Formulates project-specific invariable logic, formulas, decision rules, constants, and golden vectors.
    - Saves to `.agents/docs/ssot/SSOT-NNNN.md` (sequential 4-digit ID) and updates the ledger in `.agents/docs/ssot/INDEX.md`.
 
-3. **Two-Phase Planning Workflow:**
+3. **Deliberate Two-Phase Planning Workflow (Human-in-the-Loop):**
    - **`/plan-human` (Problem Alignment):**
      - Aligns the human-facing problem: problem statement, background, core objectives, non-goals, user stories, acceptance criteria, and edge cases.
      - Scaffolds Part 1 of `.agents/docs/plans/PLAN-XXX.md`.
-   - **Review Gate:** Developer audits and approves the human alignment.
+   - **Review Gate (Mandatory Human Review):** Developer audits, refines, and explicitly approves the human problem alignment before proceeding.
    - **`/plan-robot` (Technical Specification):**
      - Completes technical contracts: SSOT citations, types, schemas, interfaces, module mapping, unit test targets, and atomic tasks broken into **<= ~50 line slices**.
      - Fills Part 2 of `.agents/docs/plans/PLAN-XXX.md`.
-   - **`/plan`:** Master umbrella orchestrator providing guidance across both stages.
+   - **Review Gate (Mandatory Human Sign-off):** Developer audits and signs off on the technical specification before execution begins.
 
 4. **`/execute` (Isolated Subagent Implementation):**
    - Validates that tasks adhere to the ~50-line rule (splitting any larger tasks further).
@@ -100,7 +100,7 @@ Specific skills and subagent specs are located under [`.agents/skills/`](.agents
 | `.agents/docs/plans/` | Consolidated plan specifications & ledger | [INDEX.md](.agents/docs/plans/INDEX.md) |
 | `.agents/docs/research/` | Grounded reality research reports | [INDEX.md](.agents/docs/research/INDEX.md) |
 | `.agents/docs/ssot/` | Single Source of Truth vault (Tier 0 invariable domain truth) | [INDEX.md](.agents/docs/ssot/INDEX.md) |
-| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [plan](.agents/skills/plan/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
+| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
 | `.agents/subagents/` | Subagent role system prompts | [implementer.md](.agents/subagents/implementer.md), [planner.md](.agents/subagents/planner.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [doc-researcher.md](.agents/subagents/doc-researcher.md), [ssot-writer.md](.agents/subagents/ssot-writer.md), [reporter.md](.agents/subagents/reporter.md), [web-researcher.md](.agents/subagents/web-researcher.md) |
 | `docs/` | Human-facing living system documentation | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [ROADMAP.md](docs/ROADMAP.md), [TASKS.md](docs/TASKS.md) |
 | `.vscode/` | Workspace editor & sandbox configuration | [settings.json](.vscode/settings.json), [extensions.json](.vscode/extensions.json) |

@@ -2,7 +2,6 @@
 //!
 //! Grounded in SSOT-PHY-001, SSOT-PHY-004, and SSOT-UIX-001.
 
-use bevy::math::Vec3A;
 use bevy::prelude::*;
 use bevy::render::mesh::PrimitiveTopology;
 use bevy::render::primitives::Aabb;
@@ -10,6 +9,7 @@ use bevy::render::render_asset::RenderAssetUsages;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use synthetic_core::astronomy::kinematics::calculate_position_from_eccentric_anomaly;
 use synthetic_core::astronomy::{
     calculate_kepler_position, generate_fibonacci_nodes_by_density,
     AstroNodeConfig, GlobalPosition, SurfaceNode,
@@ -37,14 +37,9 @@ pub const MIN_PICK_RADIUS_PX: f32 = 10.0;
 /// Maximum cursor displacement in pixels allowed between mouse press and release to register as a click.
 pub const MAX_CLICK_DRAG_DISTANCE_PX: f32 = 5.0;
 
-/// Number of hours into the past and future to project the orbital path.
-pub const ORBIT_DOT_WINDOW_HOURS: i32 = 200;
+/// Number of total points in the dot orbital path covering 360 degrees.
+pub const ORBIT_DOT_COUNT: usize = 360;
 
-/// Number of total points in the dot orbital path (past + current + future).
-pub const ORBIT_DOT_COUNT: usize = (ORBIT_DOT_WINDOW_HOURS * 2 + 1) as usize;
-
-/// Number of seconds in a single orbital dot time step.
-pub const ORBIT_DOT_INTERVAL_S: f64 = 3600.0;
 
 #[derive(Component, Debug, Clone)]
 pub struct CelestialBody {
@@ -63,24 +58,6 @@ pub struct SurfaceNodesComponent {
 #[derive(Component, Debug, Clone)]
 pub struct AstroDotMarker;
 
-/// Attached to the child orbit entity rendering the dynamic time-step points.
-#[derive(Component, Debug, Clone)]
-#[allow(dead_code)]
-pub struct DynamicOrbitDots {
-    pub mesh_handle: Handle<Mesh>,
-    pub body_entity: Entity,
-}
-
-#[allow(dead_code)]
-impl DynamicOrbitDots {
-    #[must_use]
-    pub const fn new(mesh_handle: Handle<Mesh>, body_entity: Entity) -> Self {
-        Self {
-            mesh_handle,
-            body_entity,
-        }
-    }
-}
 
 /// Current simulation time tracking in seconds elapsed since epoch.
 #[derive(Resource, Debug, Clone, Copy, Default, PartialEq)]
@@ -140,7 +117,6 @@ impl Plugin for AstronomyPlugin {
                 (
                     advance_simulation_time.in_set(SimulationTimeSystem),
                     update_celestial_positions_system.after(SimulationTimeSystem),
-                    update_orbital_dots_system.after(SimulationTimeSystem),
                     solar_system_camera_focus_system,
                     mouse_pick_astronode_system,
                     update_floating_origin_transforms.after(update_celestial_positions_system),
@@ -260,7 +236,39 @@ fn create_billboard_quad_mesh() -> Mesh {
     mesh
 }
 
+/// Generates a static orbit mesh with 360 discrete points and an enclosing AABB.
+#[must_use]
+#[allow(dead_code, clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+pub fn generate_static_orbit_mesh(config: &AstroNodeConfig) -> Option<(Mesh, Aabb)> {
+    if config.eccentricity >= 1.0 {
+        return None;
+    }
 
+    let mut positions = Vec::with_capacity(ORBIT_DOT_COUNT);
+    let mut min_pt = Vec3::splat(f32::INFINITY);
+    let mut max_pt = Vec3::splat(f32::NEG_INFINITY);
+
+    for i in 0..ORBIT_DOT_COUNT {
+        let e_rad = (i as f64) * 2.0 * std::f64::consts::PI / (ORBIT_DOT_COUNT as f64);
+        let pos = calculate_position_from_eccentric_anomaly(config, GlobalPosition::ZERO, e_rad);
+        let pt = Vec3::new(pos.x as f32, pos.y as f32, pos.z as f32);
+        positions.push([pt.x, pt.y, pt.z]);
+        min_pt = min_pt.min(pt);
+        max_pt = max_pt.max(pt);
+    }
+
+    let center = (min_pt + max_pt) * 0.5;
+    let half_extents = ((max_pt - min_pt) * 0.5).max(Vec3::splat(1.0));
+    let aabb = Aabb {
+        center: center.into(),
+        half_extents: half_extents.into(),
+    };
+
+    let mut mesh = Mesh::new(PrimitiveTopology::PointList, RenderAssetUsages::RENDER_WORLD);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+
+    Some((mesh, aabb))
+}
 
 /// Calculates the screen-space projected radius of a spherical celestial body in pixels.
 #[must_use]
@@ -395,39 +403,25 @@ pub fn setup_solar_system(
         commands.entity(body_entity).add_children(&[astro_dot, surface_nodes]);
     }
 
-    // Spawn dynamic orbital dots as children of their respective parent celestial bodies
+    // Spawn static orbital dots as children of their respective parent celestial bodies
     for config in &configs {
         if config.semi_major_axis_m > 0.0 {
             if let Some(parent_name) = &config.parent_name {
                 if let Some(&parent_entity) = body_entities.get(parent_name) {
-                    if let Some(&body_entity) = body_entities.get(&config.name) {
-                        let mut mesh = Mesh::new(
-                            PrimitiveTopology::PointList,
-                            RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
-                        );
-                        mesh.insert_attribute(
-                            Mesh::ATTRIBUTE_POSITION,
-                            vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
-                        );
-                        mesh.insert_attribute(
-                            Mesh::ATTRIBUTE_NORMAL,
-                            vec![[0.0_f32, 0.0_f32, 1.0_f32]; ORBIT_DOT_COUNT],
-                        );
-                        let mesh_handle = meshes.add(mesh);
-                        let orbit_entity = commands
-                            .spawn((
-                                Mesh3d(mesh_handle.clone()),
-                                MeshMaterial3d(orbit_material.clone()),
-                                Transform::IDENTITY,
-                                Visibility::Inherited,
-                                Aabb::default(),
-                                DynamicOrbitDots {
-                                    mesh_handle,
-                                    body_entity,
-                                },
-                            ))
-                            .id();
-                        commands.entity(parent_entity).add_child(orbit_entity);
+                    if body_entities.contains_key(&config.name) {
+                        if let Some((orbit_mesh, orbit_aabb)) = generate_static_orbit_mesh(config) {
+                            let mesh_handle = meshes.add(orbit_mesh);
+                            let orbit_entity = commands
+                                .spawn((
+                                    Mesh3d(mesh_handle),
+                                    MeshMaterial3d(orbit_material.clone()),
+                                    Transform::IDENTITY,
+                                    Visibility::Inherited,
+                                    orbit_aabb,
+                                ))
+                                .id();
+                            commands.entity(parent_entity).add_child(orbit_entity);
+                        }
                     }
                 }
             }
@@ -442,74 +436,6 @@ pub fn setup_solar_system(
     });
 }
 
-/// Dynamically updates the orbital point mesh for each celestial body based on current simulation time.
-///
-/// Grounded in SSOT-PHY-001 and PLAN-019.
-/// Evaluates `calculate_kepler_position` across [`T_sim` - 200h, `T_sim` + 200h] in parent local space.
-#[allow(
-    clippy::needless_pass_by_value,
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::cast_possible_wrap,
-    clippy::cast_lossless
-)]
-pub fn update_orbital_dots_system(
-    mut commands: Commands,
-    sim_time: Res<SimulationTime>,
-    mut orbit_query: Query<(Entity, &DynamicOrbitDots, Option<&mut Aabb>)>,
-    body_query: Query<&CelestialBody>,
-    mut meshes: ResMut<Assets<Mesh>>,
-) {
-    let t_sim = sim_time.elapsed_seconds;
-
-    for (orbit_entity, orbit_dots, maybe_aabb) in &mut orbit_query {
-        let Ok(body) = body_query.get(orbit_dots.body_entity) else {
-            continue;
-        };
-
-        let Some(mesh) = meshes.get_mut(&orbit_dots.mesh_handle) else {
-            continue;
-        };
-
-        let Some(bevy::render::mesh::VertexAttributeValues::Float32x3(positions)) =
-            mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
-        else {
-            continue;
-        };
-
-        if positions.len() != ORBIT_DOT_COUNT {
-            positions.resize(ORBIT_DOT_COUNT, [0.0, 0.0, 0.0]);
-        }
-
-        let mut min_pt = Vec3::splat(f32::INFINITY);
-        let mut max_pt = Vec3::splat(f32::NEG_INFINITY);
-
-        for (i, pos_out) in positions.iter_mut().enumerate() {
-            let offset_hours = (i as i32) - ORBIT_DOT_WINDOW_HOURS;
-            let t_point = t_sim + f64::from(offset_hours) * ORBIT_DOT_INTERVAL_S;
-            let kepler_pos = calculate_kepler_position(&body.config, GlobalPosition::ZERO, t_point);
-            let pt = Vec3::new(kepler_pos.x as f32, kepler_pos.y as f32, kepler_pos.z as f32);
-            *pos_out = [pt.x, pt.y, pt.z];
-            min_pt = min_pt.min(pt);
-            max_pt = max_pt.max(pt);
-        }
-
-        if min_pt.x.is_finite() && max_pt.x.is_finite() {
-            let center = (min_pt + max_pt) * 0.5;
-            let half_extents = ((max_pt - min_pt) * 0.5).max(Vec3::splat(1.0));
-            let new_aabb = Aabb {
-                center: Vec3A::from(center),
-                half_extents: Vec3A::from(half_extents),
-            };
-
-            if let Some(mut aabb) = maybe_aabb {
-                *aabb = new_aabb;
-            } else {
-                commands.entity(orbit_entity).insert(new_aabb);
-            }
-        }
-    }
-}
 
 /// Propagates all celestial body global positions along their Keplerian orbits at current simulation time.
 #[allow(clippy::needless_pass_by_value)]
@@ -885,352 +811,6 @@ mod tests {
         let jupiter_nodes =
             generate_fibonacci_nodes_by_density(jupiter_radius, KM_SURFACE_NODE_DENSITY);
         assert_eq!(jupiter_nodes.len(), 69_911);
-    }
-
-    #[test]
-    #[allow(
-        clippy::cast_possible_truncation,
-        clippy::cast_precision_loss,
-        clippy::float_cmp,
-        clippy::cast_lossless
-    )]
-    fn test_orbital_local_space_invariance() {
-        let mut app = App::new();
-        app.add_plugins(bevy::asset::AssetPlugin::default());
-        app.init_asset::<Mesh>();
-        app.insert_resource(SimulationTime::new(10_000.0));
-
-        let parent_entity = app
-            .world_mut()
-            .spawn((
-                Transform::from_xyz(1.0e11, 2.0e11, 3.0e11),
-                GlobalTransform::from(Transform::from_xyz(1.0e11, 2.0e11, 3.0e11)),
-            ))
-            .id();
-
-        let earth_config = AstroNodeConfig {
-            name: "Earth".into(),
-            parent_name: Some("Sun".into()),
-            mass_kg: 5.972e24,
-            radius_m: 6.371e6,
-            semi_major_axis_m: 1.495_978_7e11,
-            eccentricity: 0.0167,
-            inclination_rad: 0.0,
-            longitude_of_ascending_node_rad: 0.0,
-            argument_of_periapsis_rad: 0.0,
-            true_anomaly_epoch_rad: 0.0,
-            mean_motion_rad_s: 1.991e-7,
-        };
-
-        let body_entity = app
-            .world_mut()
-            .spawn(CelestialBody {
-                config: earth_config,
-                global_position: GlobalPosition::new(1.495_978_7e11, 0.0, 0.0),
-                index: 1,
-            })
-            .id();
-
-        let mut initial_mesh = Mesh::new(
-            PrimitiveTopology::PointList,
-            RenderAssetUsages::default(),
-        );
-        initial_mesh.insert_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
-        );
-        let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(initial_mesh);
-
-        let orbit_entity = app
-            .world_mut()
-            .spawn(DynamicOrbitDots {
-                mesh_handle: mesh_handle.clone(),
-                body_entity,
-            })
-            .id();
-        app.world_mut().entity_mut(parent_entity).add_child(orbit_entity);
-
-        app.add_systems(Update, update_orbital_dots_system);
-        app.update();
-
-        let first_positions: Vec<[f32; 3]> = {
-            let meshes = app.world().resource::<Assets<Mesh>>();
-            let mesh = meshes.get(&mesh_handle).unwrap();
-            let pos_attr = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
-            let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) = pos_attr else {
-                panic!("Expected Float32x3 positions");
-            };
-            pts.clone()
-        };
-
-        // Mutate parent transform significantly to simulate camera translation or parent movement
-        {
-            let mut parent_transform = app
-                .world_mut()
-                .get_mut::<Transform>(parent_entity)
-                .unwrap();
-            parent_transform.translation = Vec3::new(-9.9e11, 4.4e11, -1.2e11);
-        }
-        app.update();
-
-        let second_positions: Vec<[f32; 3]> = {
-            let meshes = app.world().resource::<Assets<Mesh>>();
-            let mesh = meshes.get(&mesh_handle).unwrap();
-            let pos_attr = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
-            let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) = pos_attr else {
-                panic!("Expected Float32x3 positions");
-            };
-            pts.clone()
-        };
-
-        assert_eq!(first_positions.len(), ORBIT_DOT_COUNT);
-        for (p1, p2) in first_positions.iter().zip(&second_positions) {
-            assert_eq!(
-                p1, p2,
-                "Orbital points must be strictly invariant to parent transform in local space"
-            );
-            let radius = (p1[0] * p1[0] + p1[1] * p1[1] + p1[2] * p1[2]).sqrt();
-            assert!(
-                f64::from(radius) < 1.495_978_7e11 * 1.05 && f64::from(radius) > 1.495_978_7e11 * 0.95,
-                "Point must be centered around parent local origin"
-            );
-        }
-    }
-
-    #[test]
-    #[allow(
-        clippy::cast_possible_truncation,
-        clippy::cast_precision_loss,
-        clippy::cast_lossless
-    )]
-    fn test_orbital_time_window_bounds() {
-        let t_sim = 72_000.0_f64;
-        let config = AstroNodeConfig {
-            name: "TestBody".into(),
-            parent_name: Some("Sun".into()),
-            mass_kg: 1.0,
-            radius_m: 1000.0,
-            semi_major_axis_m: 1.0e10,
-            eccentricity: 0.1,
-            inclination_rad: 0.05,
-            longitude_of_ascending_node_rad: 0.1,
-            argument_of_periapsis_rad: 0.2,
-            true_anomaly_epoch_rad: 0.3,
-            mean_motion_rad_s: 1.0e-5,
-        };
-
-        let mut app = App::new();
-        app.add_plugins(bevy::asset::AssetPlugin::default());
-        app.init_asset::<Mesh>();
-        app.insert_resource(SimulationTime::new(t_sim));
-
-        let body_entity = app
-            .world_mut()
-            .spawn(CelestialBody {
-                config: config.clone(),
-                global_position: GlobalPosition::ZERO,
-                index: 0,
-            })
-            .id();
-
-        let parent_entity = app.world_mut().spawn(Transform::IDENTITY).id();
-
-        let mut mesh = Mesh::new(
-            PrimitiveTopology::PointList,
-            RenderAssetUsages::default(),
-        );
-        mesh.insert_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
-        );
-        let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
-
-        let orbit_entity = app
-            .world_mut()
-            .spawn(DynamicOrbitDots {
-                mesh_handle: mesh_handle.clone(),
-                body_entity,
-            })
-            .id();
-        app.world_mut().entity_mut(parent_entity).add_child(orbit_entity);
-
-        app.add_systems(Update, update_orbital_dots_system);
-        app.update();
-
-        let meshes = app.world().resource::<Assets<Mesh>>();
-        let mesh = meshes.get(&mesh_handle).unwrap();
-        let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) =
-            mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()
-        else {
-            panic!("Expected Float32x3 positions");
-        };
-
-        assert_eq!(pts.len(), ORBIT_DOT_COUNT);
-
-        // Verify index 0: T_points[0] strictly equals T_sim - ORBIT_DOT_WINDOW_HOURS * 3600
-        let expected_t_start = t_sim - f64::from(ORBIT_DOT_WINDOW_HOURS) * 3600.0;
-        let expected_pos_start = calculate_kepler_position(&config, GlobalPosition::ZERO, expected_t_start);
-        assert!((pts[0][0] - expected_pos_start.x as f32).abs() < 1e-1);
-        assert!((pts[0][1] - expected_pos_start.y as f32).abs() < 1e-1);
-        assert!((pts[0][2] - expected_pos_start.z as f32).abs() < 1e-1);
-
-        // Verify index 200 (current time T_sim)
-        let mid_idx = ORBIT_DOT_WINDOW_HOURS as usize;
-        let expected_pos_mid = calculate_kepler_position(&config, GlobalPosition::ZERO, t_sim);
-        assert!((pts[mid_idx][0] - expected_pos_mid.x as f32).abs() < 1e-1);
-        assert!((pts[mid_idx][1] - expected_pos_mid.y as f32).abs() < 1e-1);
-        assert!((pts[mid_idx][2] - expected_pos_mid.z as f32).abs() < 1e-1);
-
-        // Verify index 400: T_points[400] strictly equals T_sim + ORBIT_DOT_WINDOW_HOURS * 3600
-        let end_idx = ORBIT_DOT_COUNT - 1;
-        let expected_t_end = t_sim + f64::from(ORBIT_DOT_WINDOW_HOURS) * 3600.0;
-        let expected_pos_end = calculate_kepler_position(&config, GlobalPosition::ZERO, expected_t_end);
-        assert!((pts[end_idx][0] - expected_pos_end.x as f32).abs() < 1e-1);
-        assert!((pts[end_idx][1] - expected_pos_end.y as f32).abs() < 1e-1);
-        assert!((pts[end_idx][2] - expected_pos_end.z as f32).abs() < 1e-1);
-    }
-
-    #[test]
-    fn test_dynamic_orbital_dots_aabb_update() {
-        let mut app = App::new();
-        app.add_plugins(bevy::asset::AssetPlugin::default());
-        app.init_asset::<Mesh>();
-        app.insert_resource(SimulationTime::new(0.0));
-
-        let mut config = create_test_body_config("Earth");
-        config.parent_name = Some("Sun".into());
-        config.semi_major_axis_m = 1.496e11;
-        config.mean_motion_rad_s = 1.991e-7;
-
-        let body_entity = app
-            .world_mut()
-            .spawn(CelestialBody {
-                config,
-                global_position: GlobalPosition::ZERO,
-                index: 0,
-            })
-            .id();
-        let parent = app.world_mut().spawn(Transform::IDENTITY).id();
-
-        let mut mesh = Mesh::new(PrimitiveTopology::PointList, RenderAssetUsages::default());
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0_f32; 3]; ORBIT_DOT_COUNT]);
-        let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
-
-        let orbit_entity = app
-            .world_mut()
-            .spawn((
-                DynamicOrbitDots {
-                    mesh_handle,
-                    body_entity,
-                },
-                Aabb::default(),
-            ))
-            .id();
-        app.world_mut().entity_mut(parent).add_child(orbit_entity);
-
-        app.add_systems(Update, update_orbital_dots_system);
-        app.update();
-
-        let aabb_t0 = *app.world().get::<Aabb>(orbit_entity).unwrap();
-        assert!(aabb_t0.center.x > 1.4e11, "AABB at t=0 must be near +1.5e11");
-
-        // Advance 6 months (half orbit ~ 1.578e7 s)
-        app.world_mut().resource_mut::<SimulationTime>().elapsed_seconds = 1.578e7;
-        app.update();
-
-        let aabb_t6m = *app.world().get::<Aabb>(orbit_entity).unwrap();
-        assert!(aabb_t6m.center.x < -1.4e11, "AABB at t=6m must be near -1.5e11");
-        assert!((aabb_t6m.center - aabb_t0.center).length() > 2.8e11);
-    }
-
-    #[test]
-    #[allow(
-        clippy::cast_possible_truncation,
-        clippy::cast_precision_loss,
-        clippy::cast_lossless
-    )]
-    fn test_eccentricity_edge_cases() {
-        let test_eccentricities = [0.0, 0.001, 0.5, 0.9, 0.99, 0.999_999];
-        let test_sim_times = [-1_000_000.0, 0.0, 100.0, 500_000.0, 10_000_000.0];
-
-        for &e in &test_eccentricities {
-            let config = AstroNodeConfig {
-                name: format!("Body_e_{e}"),
-                parent_name: Some("Sun".into()),
-                mass_kg: 1.0e24,
-                radius_m: 5.0e6,
-                semi_major_axis_m: 2.0e11,
-                eccentricity: e,
-                inclination_rad: 0.1,
-                longitude_of_ascending_node_rad: 0.2,
-                argument_of_periapsis_rad: 0.3,
-                true_anomaly_epoch_rad: 0.0,
-                mean_motion_rad_s: 1.0e-7,
-            };
-
-            for &t in &test_sim_times {
-                let mut app = App::new();
-                app.add_plugins(bevy::asset::AssetPlugin::default());
-                app.init_asset::<Mesh>();
-                app.insert_resource(SimulationTime::new(t));
-
-                let body_entity = app
-                    .world_mut()
-                    .spawn(CelestialBody {
-                        config: config.clone(),
-                        global_position: GlobalPosition::ZERO,
-                        index: 0,
-                    })
-                    .id();
-
-                let parent_entity = app.world_mut().spawn(Transform::IDENTITY).id();
-
-                let mut mesh = Mesh::new(
-                    PrimitiveTopology::PointList,
-                    RenderAssetUsages::default(),
-                );
-                mesh.insert_attribute(
-                    Mesh::ATTRIBUTE_POSITION,
-                    vec![[0.0_f32, 0.0_f32, 0.0_f32]; ORBIT_DOT_COUNT],
-                );
-                let mesh_handle = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
-
-                let orbit_entity = app
-                    .world_mut()
-                    .spawn(DynamicOrbitDots {
-                        mesh_handle: mesh_handle.clone(),
-                        body_entity,
-                    })
-                    .id();
-                app.world_mut().entity_mut(parent_entity).add_child(orbit_entity);
-
-                app.add_systems(Update, update_orbital_dots_system);
-                app.update();
-
-                let meshes = app.world().resource::<Assets<Mesh>>();
-                let mesh = meshes.get(&mesh_handle).unwrap();
-                let bevy::render::mesh::VertexAttributeValues::Float32x3(pts) =
-                    mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap()
-                else {
-                    panic!("Expected Float32x3 positions");
-                };
-
-                assert_eq!(pts.len(), ORBIT_DOT_COUNT);
-                for pt in pts {
-                    assert!(!pt[0].is_nan() && !pt[0].is_infinite(), "X must be finite for e={e}");
-                    assert!(!pt[1].is_nan() && !pt[1].is_infinite(), "Y must be finite for e={e}");
-                    assert!(!pt[2].is_nan() && !pt[2].is_infinite(), "Z must be finite for e={e}");
-
-                    let r = f64::from(pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2]).sqrt();
-                    let min_expected = config.semi_major_axis_m * (1.0 - e) * 0.999;
-                    let max_expected = config.semi_major_axis_m * (1.0 + e) * 1.001;
-                    assert!(
-                        r >= min_expected && r <= max_expected,
-                        "Radius {r} out of bounds [{min_expected}, {max_expected}] for e={e}"
-                    );
-                }
-            }
-        }
     }
 
     #[test]
@@ -1642,5 +1222,42 @@ mod tests {
 
         // After half an orbit, Earth's position should be on opposite side of the Sun
         assert!((earth_t0.x + earth_half_year.x).abs() < 1e10);
+    }
+
+    #[test]
+    fn test_generate_static_orbit_mesh() {
+        let earth_config = AstroNodeConfig {
+            name: "Earth".into(),
+            parent_name: Some("Sun".into()),
+            mass_kg: 5.972e24,
+            radius_m: 6.371e6,
+            semi_major_axis_m: 1.495_978_7e11,
+            eccentricity: 0.016,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
+            true_anomaly_epoch_rad: 0.0,
+            mean_motion_rad_s: 1.991e-7,
+        };
+
+        let result = generate_static_orbit_mesh(&earth_config);
+        assert!(result.is_some());
+        let (mesh, aabb) = result.unwrap();
+
+        let positions = mesh
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .expect("attribute position");
+        assert_eq!(positions.len(), ORBIT_DOT_COUNT);
+
+        assert!(aabb.center.is_finite());
+        assert!(aabb.half_extents.is_finite());
+        assert!(aabb.center.length() > 0.0);
+        assert!(aabb.half_extents.length() > 0.0);
+
+        let escape_config = AstroNodeConfig {
+            eccentricity: 1.5,
+            ..earth_config
+        };
+        assert!(generate_static_orbit_mesh(&escape_config).is_none());
     }
 }

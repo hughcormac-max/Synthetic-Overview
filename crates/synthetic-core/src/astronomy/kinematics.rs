@@ -77,12 +77,27 @@ pub fn calculate_kepler_position(
         }
     }
 
+    calculate_position_from_eccentric_anomaly(config, parent_pos, eccentric_anomaly)
+}
+
+/// Calculates the global position of an `AstroNode` given eccentric anomaly.
+#[must_use]
+pub fn calculate_position_from_eccentric_anomaly(
+    config: &AstroNodeConfig,
+    parent_pos: GlobalPosition,
+    eccentric_anomaly: f64,
+) -> GlobalPosition {
+    if config.semi_major_axis_m <= 0.0 {
+        return parent_pos;
+    }
+
+    let e = config.eccentricity.clamp(0.0, 0.999_999);
     let sin_half_e = (eccentric_anomaly * 0.5).sin();
     let cos_half_e = (eccentric_anomaly * 0.5).cos();
     let true_anomaly = 2.0 * ((1.0 + e).sqrt() * sin_half_e).atan2((1.0 - e).sqrt() * cos_half_e);
 
     let radius = config.semi_major_axis_m * (1.0 - e * eccentric_anomaly.cos());
-    
+
     let i = config.inclination_rad;
     let omega_upper = config.longitude_of_ascending_node_rad;
     let omega_lower = config.argument_of_periapsis_rad;
@@ -235,5 +250,43 @@ mod tests {
         assert!(pos.x.abs() < 1.0);
         assert!(pos.y.abs() < 1.0);
         assert!((pos.z - 1e10).abs() < 1.0);
+    }
+
+    #[test]
+    fn test_calculate_position_from_eccentric_anomaly() {
+        use std::f64::consts::{FRAC_PI_2, PI};
+
+        let config = AstroNodeConfig {
+            name: "TestBody".into(),
+            parent_name: Some("Sun".into()),
+            mass_kg: 1e24,
+            radius_m: 1e6,
+            semi_major_axis_m: 1e10,
+            eccentricity: 0.0,
+            true_anomaly_epoch_rad: 0.0,
+            inclination_rad: 0.0,
+            longitude_of_ascending_node_rad: 0.0,
+            argument_of_periapsis_rad: 0.0,
+            mean_motion_rad_s: 1e-7,
+        };
+
+        let angles = [0.0, FRAC_PI_2, PI, 3.0 * FRAC_PI_2, 2.0 * PI];
+        for &ea in &angles {
+            let p = calculate_position_from_eccentric_anomaly(&config, GlobalPosition::ZERO, ea);
+            assert!(!p.x.is_nan() && !p.y.is_nan() && !p.z.is_nan(), "NaN at ea={ea}");
+            assert!(((p.x * p.x + p.y * p.y + p.z * p.z).sqrt() - 1e10).abs() < 1.0);
+        }
+
+        let pos_zero = calculate_position_from_eccentric_anomaly(&config, GlobalPosition::ZERO, 0.0);
+        let pos_quarter = calculate_position_from_eccentric_anomaly(&config, GlobalPosition::ZERO, FRAC_PI_2);
+        let pos_half = calculate_position_from_eccentric_anomaly(&config, GlobalPosition::ZERO, PI);
+        let pos_three_quarters = calculate_position_from_eccentric_anomaly(&config, GlobalPosition::ZERO, 3.0 * FRAC_PI_2);
+        let pos_full = calculate_position_from_eccentric_anomaly(&config, GlobalPosition::ZERO, 2.0 * PI);
+
+        assert!((pos_zero.x - 1e10).abs() < 1.0 && pos_zero.y.abs() < 1.0);
+        assert!(pos_quarter.x.abs() < 1.0 && (pos_quarter.y - 1e10).abs() < 1.0);
+        assert!((pos_half.x + 1e10).abs() < 1.0 && pos_half.y.abs() < 1.0);
+        assert!(pos_three_quarters.x.abs() < 1.0 && (pos_three_quarters.y + 1e10).abs() < 1.0);
+        assert!((pos_full.x - pos_zero.x).abs() < 1e-4 && (pos_full.y - pos_zero.y).abs() < 1e-4);
     }
 }

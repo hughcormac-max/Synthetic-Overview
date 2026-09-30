@@ -1,12 +1,12 @@
 ---
 name: plan-robot
-description: Use this skill after /plan-human to fill in the technical specifications, contracts, file-by-file mapping, unit test targets, and atomic steps (<= 50 lines each) in an existing plan.
+description: Use this skill after /plan-human and human-in-the-loop review to fill in technical specifications, contracts, file-by-file mapping, unit test targets, and atomic steps (<= 50 lines each) in an existing plan.
 ---
 
 # `/plan-robot` Workflow Trajectory
 
 > **Workflow Command:** `/plan-robot`
-> **Purpose:** Ingest a human-aligned plan and formulate technical contracts, schemas, module mappings, and atomic tasks with a strict limit: **any step larger than approximately 50 lines must be decomposed further**.
+> **Purpose:** Ingest a human-reviewed and approved plan to formulate technical contracts, schemas, module mappings, and atomic tasks with a strict limit: **any step larger than approximately 50 lines must be decomposed further**.
 
 ---
 
@@ -16,7 +16,7 @@ description: Use this skill after /plan-human to fill in the technical specifica
 
 1. **Locate Target Plan:**
    - Read `.agents/docs/plans/PLAN-XXX.md`.
-   - Verify that Part 1 (Human Problem Alignment) is populated and approved.
+   - Verify that Part 1 (Human Problem Alignment) is populated and has been explicitly reviewed and approved by the human developer.
 2. **Scan Codebase & Domain References:**
    - Query `.agents/docs/ssot/` for applicable domain truths, formulas, constants, or golden vectors.
    - Inspect existing codebase interfaces, data structures, and caller sites.

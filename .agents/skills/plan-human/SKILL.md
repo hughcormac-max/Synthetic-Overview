@@ -24,7 +24,7 @@ description: Use this skill when initiating a new feature, refactor, or bugfix t
 ### Phase 2: Draft Part 1 (Human Problem Alignment)
 
 1. **Initialize or Update Plan File:**
-   - Copy `.agents/skills/plan/resources/TEMPLATE.md` to `.agents/docs/plans/PLAN-XXX.md` (if new).
+   - Copy `.agents/skills/plan-human/resources/TEMPLATE.md` to `.agents/docs/plans/PLAN-XXX.md` (if new).
    - Set YAML frontmatter:
      ```yaml
      ---
@@ -53,5 +53,6 @@ description: Use this skill when initiating a new feature, refactor, or bugfix t
    - Ensure an entry exists in `.agents/docs/plans/INDEX.md` with status `draft`.
 2. **Present Human Summary to User:**
    - Present a concise summary in chat highlighting problem statement, core objectives, non-goals, and acceptance criteria.
-3. **Review Gate (HALT):**
-   - **PAUSE:** Await user confirmation before invoking `/plan-robot`.
+3. **Review Gate (Mandatory Human In The Loop HALT):**
+   - **STRICT HALT:** Deliberately pause here for human review. Do not automatically proceed to `/plan-robot`.
+   - The user must review, refine if necessary, and explicitly instruct the agent to run `/plan-robot` once aligned.
