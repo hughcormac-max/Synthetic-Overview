@@ -34,9 +34,9 @@ This document establishes the repository guidelines, architectural boundaries, c
 
 5. **Anti-Hallucination, Bounded Context & Subagent Isolation:**
    - **Contract-First:** Never write implementation code until public interfaces, data types, and function signatures are specified in an approved plan.
-   - **Strict ~50-Line Atomic Task Sizing:** Individual implementation steps must be small. **Any task or code change larger than approximately 50 lines of code must be split into smaller sub-steps before dispatching an implementer.**
-   - **Subagent Task Isolation:** Implementation tasks targeting isolated files are executed by focused subagent contexts, preventing cross-file pollution and bounding blast radius.
-   - **Step-by-Step Assertion:** Run and pass hermetic unit tests for Step N before proceeding to Step N+1.
+   - **Pseudocode-Driven Tasks:** The strict <= 50-line rule has been replaced. Instead, work must be broken down into atomic logical tasks (e.g., specific functions, components, or files), and explicit **pseudocode** must be drafted for each step.
+   - **Subagent Task Isolation:** Implementation tasks targeting isolated files are executed by focused subagent contexts, preventing cross-file pollution and bounding blast radius. The `implementer` strictly translates pseudocode to code.
+   - **Boomerang Summary & Verification:** After implementation, the orchestrator awaits a Boomerang Summary and dispatches a `code-reviewer` to verify pseudocode adherence and test passes.
 
 6. **Static Plan Storage (No Active/Archive File Movement):**
    - All plans reside permanently in `.agents/docs/plans/` (e.g. `PLAN-001.md`).
@@ -71,17 +71,17 @@ All domain research, specifications, planning, and implementations follow this t
 3. **Deliberate Two-Phase Planning Workflow (Human-in-the-Loop):**
    - **`/plan-human` (Problem Alignment):**
      - Aligns the human-facing problem: problem statement, background, core objectives, non-goals, user stories, acceptance criteria, and edge cases.
-     - Scaffolds Part 1 of `.agents/docs/plans/PLAN-XXX.md`.
+     - Scaffolds Part 1 of `.agents/docs/plans/PLAN-NNNN.md`.
    - **Review Gate (Mandatory Human Review):** Developer audits, refines, and explicitly approves the human problem alignment before proceeding.
    - **`/plan-robot` (Technical Specification):**
-     - Completes technical contracts: SSOT citations, types, schemas, interfaces, module mapping, unit test targets, and atomic tasks broken into **<= ~50 line slices**.
-     - Fills Part 2 of `.agents/docs/plans/PLAN-XXX.md`.
+     - Completes technical contracts: SSOT citations, types, schemas, interfaces, module mapping, unit test targets, and **Pseudocode-Driven Atomic Tasks**.
+     - Fills Part 2 of `.agents/docs/plans/PLAN-NNNN.md`.
    - **Review Gate (Mandatory Human Sign-off):** Developer audits and signs off on the technical specification before execution begins.
 
-4. **`/execute` (Isolated Subagent Implementation):**
-   - Validates that tasks adhere to the ~50-line rule (splitting any larger tasks further).
-   - Spawns isolated subagents to implement tasks in different code files.
-   - Asserts hermetic tests and typechecks after each step, updating checklist progress.
+4. **`/execute` (Orchestrator-Worker Implementation):**
+   - Implements the approved plan using the Boomerang Pattern.
+   - Spawns the `implementer` subagent to translate pseudocode into code, and waits for a Boomerang Summary.
+   - Dispatches the `code-reviewer` to run hermetic tests, verify pseudocode adherence, and update checklist progress.
 
 5. **`/archive-plan` (QA Verification & Lifecycle Closure):**
    - Validates the 7-Point QA checklist.
@@ -101,7 +101,7 @@ Specific skills and subagent specs are located under [`.agents/skills/`](.agents
 | `.agents/docs/research/` | Grounded reality research reports | [INDEX.md](.agents/docs/research/INDEX.md) |
 | `.agents/docs/ssot/` | Single Source of Truth vault (Tier 0 invariable domain truth) | [INDEX.md](.agents/docs/ssot/INDEX.md) |
 | `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
-| `.agents/subagents/` | Subagent role system prompts | [implementer.md](.agents/subagents/implementer.md), [planner.md](.agents/subagents/planner.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [doc-researcher.md](.agents/subagents/doc-researcher.md), [ssot-writer.md](.agents/subagents/ssot-writer.md), [reporter.md](.agents/subagents/reporter.md), [web-researcher.md](.agents/subagents/web-researcher.md) |
+| `.agents/subagents/` | Subagent role system prompts | [implementer.md](.agents/subagents/implementer.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [researcher.md](.agents/subagents/researcher.md) |
 | `docs/` | Human-facing living system documentation | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [ROADMAP.md](docs/ROADMAP.md), [TASKS.md](docs/TASKS.md) |
 | `.vscode/` | Workspace editor & sandbox configuration | [settings.json](.vscode/settings.json), [extensions.json](.vscode/extensions.json) |
 
@@ -128,7 +128,7 @@ Prior to marking any task or plan as complete (`/archive-plan`):
 - [ ] **1. Type Check:** Clean compilation with zero type errors (`cargo check --workspace --all-targets`).
 - [ ] **2. Unit Tests:** 100% pass rate for touched and newly created modules (`cargo test --workspace`).
 - [ ] **3. Regression Tests:** All existing regression suites pass with zero regressions.
-- [ ] **4. Contract Adherence:** Code strictly satisfies technical contracts in `PLAN-XXX.md`.
+- [ ] **4. Contract Adherence:** Code strictly satisfies technical contracts in `PLAN-NNNN.md`.
 - [ ] **5. Zero LaTeX Audit:** Zero unescaped dollar signs (`$...$`, `$$...$$`) or LaTeX macros in docs, code comments, or chat output.
-- [ ] **6. Plan Checklist Sync:** All implementation checkboxes in `PLAN-XXX.md` are marked complete.
+- [ ] **6. Plan Checklist Sync:** All implementation checkboxes in `PLAN-NNNN.md` are marked complete.
 - [ ] **7. Clean Git Status:** No lingering temporary files, debug statements, or unsanctioned modifications.

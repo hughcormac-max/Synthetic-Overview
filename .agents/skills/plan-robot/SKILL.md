@@ -1,21 +1,21 @@
 ---
 name: plan-robot
-description: Use this skill after /plan-human and human-in-the-loop review to fill in technical specifications, contracts, file-by-file mapping, unit test targets, and atomic steps (<= 50 lines each) in an existing plan.
+description: Use this skill after /plan-human and human-in-the-loop review to fill in technical specifications, contracts, file-by-file mapping, unit test targets, and Pseudocode-Driven Atomic Tasks in an existing plan.
 ---
 
 # `/plan-robot` Workflow Trajectory
 
 > **Workflow Command:** `/plan-robot`
-> **Purpose:** Ingest a human-reviewed and approved plan to formulate technical contracts, schemas, module mappings, and atomic tasks with a strict limit: **any step larger than approximately 50 lines must be decomposed further**.
+> **Purpose:** Ingest a human-reviewed and approved plan to formulate technical contracts, schemas, module mappings, and atomic logical tasks driven strictly by explicit pseudocode.
 
 ---
 
-## 🎯 Workflow Execution Steps
+## 🛠️ Workflow Execution Steps
 
 ### Phase 1: Ingest Aligned Plan & Domain Truth
 
 1. **Locate Target Plan:**
-   - Read `.agents/docs/plans/PLAN-XXX.md`.
+   - Read `.agents/docs/plans/PLAN-NNNN.md`.
    - Verify that Part 1 (Human Problem Alignment) is populated and has been explicitly reviewed and approved by the human developer.
 2. **Scan Codebase & Domain References:**
    - Query `.agents/docs/ssot/` for applicable domain truths, formulas, constants, or golden vectors.
@@ -32,9 +32,10 @@ description: Use this skill after /plan-human and human-in-the-loop review to fi
    - Define exact function signatures, argument types, and explicit Result/Error types.
 4. **Section 2.4 File-by-File Module Mapping:**
    - Group by layer (Domain, Application, Infrastructure, Presentation) with exact target file paths.
-5. **Section 2.5 Atomic Implementation Slices (STRICT <= ~50 LINES RULE):**
+5. **Section 2.5 Pseudocode-Driven Atomic Logical Tasks:**
    - Break implementation tasks into an ordered checklist (`- [ ]`).
-   - **MANDATORY INVARIANT:** Each atomic step must target a single file or isolated unit and represent no more than ~50 lines of code changes. Any task estimated or drafted at > 50 lines must be split into sub-steps before finalizing.
+   - **MANDATORY INVARIANT:** Each task must represent a single atomic logical step (e.g., a specific function, component, or file).
+   - **MANDATORY INVARIANT:** For each task, you MUST write explicit **pseudocode** or algorithmic steps. This pseudocode will be handed directly to the implementer subagent.
 6. **Section 2.6 Unit Test Targets & Verification Commands:**
    - List each module alongside its test file and test scenarios (including edge cases and golden vectors).
    - Configure active verification commands matching project stack (typecheck, lint, test, build).
@@ -44,7 +45,7 @@ description: Use this skill after /plan-human and human-in-the-loop review to fi
 1. **Update Plan Metadata:**
    - Set `updated: YYYY-MM-DD`.
 2. **Present Technical Blueprint in Chat:**
-   - Summarize key types, public APIs, affected files, and atomic task breakdowns.
+   - Summarize key types, public APIs, affected files, and the pseudocode tasks.
 3. **Approval Gate (HALT):**
    - **STRICT HALT:** Await explicit developer approval. Upon approval, update frontmatter:
      ```yaml

@@ -22,7 +22,7 @@ description: Conduct online research grounded in reality through web search and 
    - Extract raw, non-hallucinated facts, documentation excerpts, and verifiable domain data.
    - Collect exact primary source URLs for all findings.
 4. **Synthesize Report using Template:**
-   - Ingest findings into the template at `.agents/skills/research/resources/template.md`.
+   - Ingest findings into the template at `.agents/skills/research/assets/template.md`.
    - Adhere strictly to the project's Zero-LaTeX plain-text math rules.
    - Include the JSON `Index Metadata` block at the end of the report.
 5. **Save Report & Update Ledger:**

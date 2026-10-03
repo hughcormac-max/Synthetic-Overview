@@ -19,7 +19,7 @@ description: Verify completion criteria, log architectural retrospective notes, 
      1. **Typecheck:** Confirm zero compilation/type errors.
      2. **Unit Tests:** Confirm 100% pass rate on touched and new modules.
      3. **Regression Tests:** Verify full test suite passes with zero regressions.
-     4. **Contract Adherence:** Confirm implementation matches approved contracts in `PLAN-XXX.md`.
+     4. **Contract Adherence:** Confirm implementation matches approved contracts in `PLAN-NNNN.md`.
      5. **Zero-LaTeX Audit:** Grep touched files for unescaped dollar signs (`$...$`, `$$...$$`) or LaTeX macros (`\dot`, `\frac`, `\approx`, `\Omega`, etc.). Confirm pure ASCII/plain text notation.
      6. **Downward Reference Audit:** Confirm `.agents/docs/ssot/` maintains zero upward path references to codebase files (`src/`, `package.json`, etc.).
      7. **Plan Checklist & Clean Git Status:** Verify all steps are ticked (`- [x]`) and no lingering scratch/debug artifacts remain.
@@ -29,10 +29,10 @@ description: Verify completion criteria, log architectural retrospective notes, 
 ### Phase 2: Retrospective & Frontmatter Finalization
 
 1. **Log Retrospective & Deviations:**
-   - Review Part 3 (Sections 13 & 14) in `.agents/docs/plans/PLAN-XXX.md`.
+   - Review Part 3 (Sections 13 & 14) in `.agents/docs/plans/PLAN-NNNN.md`.
    - Ensure all runtime pivots, lessons learned, and follow-up items are documented.
 2. **Update Plan Frontmatter:**
-   - Update YAML frontmatter in `.agents/docs/plans/PLAN-XXX.md`:
+   - Update YAML frontmatter in `.agents/docs/plans/PLAN-NNNN.md`:
      ```yaml
      status: completed # completed | superseded | abandoned
      updated: YYYY-MM-DD

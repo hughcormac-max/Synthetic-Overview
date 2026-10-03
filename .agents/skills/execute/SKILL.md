@@ -1,55 +1,56 @@
 ---
 name: execute
-description: Sequentially implement an approved plan by spawning isolated subagents for file-level tasks, enforcing <= 50 line change thresholds and step-by-step test assertions.
+description: Sequentially implement an approved plan using the Orchestrator-Worker (Boomerang) pattern. Dispatches the implementer with pseudocode, waits for a Boomerang Summary, and spawns the code-reviewer for verification.
 ---
 
 # `/execute` Workflow Trajectory
 
 > **Workflow Command:** `/execute`
-> **Purpose:** Sequentially implement an approved plan from `.agents/docs/plans/PLAN-XXX.md` by dispatching isolated subagents to implement focused tasks across different code files.
+> **Purpose:** Sequentially implement an approved plan from `.agents/docs/plans/PLAN-NNNN.md` by orchestrating the implementer and code-reviewer subagents using the Boomerang pattern.
 
 ---
 
-## 🎯 Core Execution Invariants
+## 🛑 Core Execution Invariants
 
-1. **Strict ~50-Line Slicing Threshold:**
-   - Any implementation task involving more than approximately 50 lines of code changes MUST be split into smaller sub-tasks before code generation begins.
-2. **Subagent Task Isolation:**
-   - Tasks targeting different files or modules are executed by isolated subagents (using `self` with branch/share workspace or focused prompt scopes).
-   - This bounds the blast radius and prevents hallucinated cross-file pollution.
-3. **Step-by-Step Test Assertion:**
-   - Unit tests for step N must pass before proceeding to step N+1.
-   - Checklist checkboxes (`- [x]`) are marked in `.agents/docs/plans/PLAN-XXX.md` as each step is verified.
+1. **Pseudocode Translation:**
+   - The orchestrator owns the plan and delegates only **one pseudocode task** at a time to the implementer.
+   - The implementer translates pseudocode directly into code.
+2. **Boomerang Summary Protocol:**
+   - The orchestrator must wait for the implementer to return a strict **Boomerang Summary** (Files Modified, Commands Run, Exit Codes) before proceeding.
+3. **Two-Stage Verification Gate:**
+   - Before ticking off a task, the orchestrator MUST spawn the `code-reviewer` to validate the Boomerang Summary against the pseudocode and ensure all project tests pass.
+   - Checklist checkboxes (`- [x]`) are marked in `.agents/docs/plans/PLAN-NNNN.md` only after the `code-reviewer` approves.
 
 ---
 
-## 🛠️ Execution Protocol
+## ⚙️ Execution Protocol
 
 ### Phase 1: Ingest Approved Plan
 
 1. **Locate Target Plan:**
-   - Read `.agents/docs/plans/PLAN-XXX.md`.
+   - Read `.agents/docs/plans/PLAN-NNNN.md`.
    - Confirm frontmatter `status` is `approved` or `in-progress`.
    - If `approved`, update frontmatter to `status: in-progress`.
 
-### Phase 2: Atomic Task Execution Loop
+### Phase 2: Orchestrator Loop (Boomerang Pattern)
 
 For each unchecked task (`- [ ]`) in Section 11 of the plan:
 
-1. **Task Size Verification:**
-   - Review the planned task scope. If estimated changes exceed ~50 lines, split the task into multiple discrete sub-tasks in the plan checklist before proceeding.
-2. **Spawn Isolated Subagent:**
-   - Invoke an isolated subagent (`TypeName: "self"` with `Workspace: "branch"` or focused task prompt):
-     - Pass the approved technical contracts from Section 8 & 9.
-     - Pass the specific target file and task instructions.
-     - Enforce the 50-line maximum constraint.
-     - Instruct the subagent to write the implementation code and corresponding unit tests.
-3. **Assert Hermetic Tests & Typechecks:**
-   - Run the project test suite and typechecker on the modified code.
-   - If tests fail, resolve failures within the isolated context before merging.
-4. **Synchronize Checklist Progress:**
-   - Mark the step complete (`- [x]`) in `.agents/docs/plans/PLAN-XXX.md`.
-   - If any runtime architectural pivot occurred, log it immediately in Section 13 (Deviations).
+1. **Identify Task:**
+   - Read the next unchecked logical task and its explicit pseudocode.
+2. **Spawn Implementer:**
+   - Invoke the `implementer` subagent.
+   - Pass the specific target file and the **pseudocode task**.
+   - Instruct the subagent to write the implementation and return the Boomerang Summary.
+3. **Wait for Boomerang Summary:**
+   - Receive the summary containing Files Modified, Commands Run, and Exit Codes.
+4. **Spawn Code-Reviewer:**
+   - Invoke the `code-reviewer` subagent.
+   - Pass the original pseudocode and the implementer's Boomerang Summary.
+   - Instruct the reviewer to perform the Two-Stage Verification Gate.
+5. **Tick the Checkbox / Handle Rejection:**
+   - If the reviewer **APPROVES**: Mark the step complete (`- [x]`) in `.agents/docs/plans/PLAN-NNNN.md`.
+   - If the reviewer **REJECTS**: Re-dispatch the `implementer` with the reviewer's feedback.
 
 ### Phase 3: Final Verification & Pre-Archive Readiness
 

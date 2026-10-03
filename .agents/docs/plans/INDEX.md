@@ -35,11 +35,11 @@
 
 ## 📝 Plan Lifecycle & Conventions
 
-All plans are stored directly in this directory (`.agents/docs/plans/PLAN-XXX.md`) and **do not move** between active and archive directories. Their status is tracked directly in YAML frontmatter:
+All plans are stored directly in this directory (`.agents/docs/plans/PLAN-NNNN.md`) and **do not move** between active and archive directories. Their status is tracked directly in YAML frontmatter:
 
 ```yaml
 ---
-id: PLAN-XXX
+id: PLAN-NNNN
 title: "[Short, Descriptive Title]"
 status: draft # draft | approved | in-progress | completed | superseded | abandoned
 author: "[Author / Agent Name]"

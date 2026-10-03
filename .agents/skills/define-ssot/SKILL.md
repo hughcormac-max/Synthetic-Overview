@@ -19,7 +19,7 @@ description: Establish a new Single Source of Truth (SSOT-0001.md) in .agents/do
    - Read `.agents/docs/ssot/INDEX.md` to identify the highest existing `SSOT-NNNN` ID.
    - Increment the number to determine the new 4-digit zero-padded sequential ID (e.g. `SSOT-0001`, `SSOT-0002`).
 3. **Format Specification using Template:**
-   - Format the domain knowledge using the template at `.agents/skills/define-ssot/resources/template.md`.
+   - Format the domain knowledge using the template at `.agents/skills/define-ssot/assets/template.md`.
    - **Enforce Invariant 1 (Strict Downward Reference):** The document must remain 100% self-contained domain truth. NEVER reference specific codebase files (`src/...`) in an SSOT.
    - **Enforce Invariant 2 (Zero-LaTeX):** All formulas must be formatted in clean ASCII / Unicode plain text (e.g. `a = a0 + a_dot * T`).
    - Formulate explicit golden test vectors with deterministic inputs and exact outputs.

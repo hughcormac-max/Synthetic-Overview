@@ -18,17 +18,16 @@ description: Use this skill when initiating a new feature, refactor, or bugfix t
    - Engage with the user to clarify the core user problem, desired experience, and specific workflows.
    - Clarify edge cases, user pain points, and explicit boundaries.
 2. **Determine Plan ID:**
-   - Read `.agents/docs/plans/INDEX.md` to find existing plans.
-   - Determine the next sequential plan ID (e.g., `PLAN-001`). If targeting an existing draft, reuse that ID.
+   - Execute `.agents/skills/plan-human/scripts/generate_next_id.sh` to determine the next sequential 4-digit zero-padded plan ID (e.g., `PLAN-0001`). If targeting an existing draft, reuse that ID.
 
 ### Phase 2: Draft Part 1 (Human Problem Alignment)
 
 1. **Initialize or Update Plan File:**
-   - Copy `.agents/skills/plan-human/resources/TEMPLATE.md` to `.agents/docs/plans/PLAN-XXX.md` (if new).
+   - Copy `.agents/skills/plan-human/assets/TEMPLATE.md` to `.agents/docs/plans/PLAN-NNNN.md` (if new).
    - Set YAML frontmatter:
      ```yaml
      ---
-     id: PLAN-XXX
+     id: PLAN-NNNN
      title: "[Short, Descriptive Title]"
      status: draft
      author: "[Author / Agent Name]"
