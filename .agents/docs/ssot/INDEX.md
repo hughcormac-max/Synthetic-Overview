@@ -7,11 +7,15 @@
 
 ## 🏛️ Grounding Framework Overview
 
-The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, formulas, logic loops, constants, and known hallucination traps.
+The **Domain Knowledge & SSOT System** stores immutable, authoritative domain context, conventions, formulas, decision rules, constants, and known hallucination traps across two archetypes:
 
-- **Tier 0 (Domain Truth — `.agents/docs/ssot/SSOT-NNNN.md`):** Pure domain truth, formulas, constants, and golden test vectors. Zero upward knowledge of codebase files.
-- **Tier 1 (Technical Plans — `.agents/docs/plans/`):** Cites Tier 0 SSOT specifications before code is written.
-- **Tier 2 (Source Implementation — `src/` or `crates/`):** Code and unit tests cite Tier 0 SSOT documents and assert against golden test vectors.
+- **Flat Reference Context (`type: context`):** Scannable key-value facts, domain glossaries, policies, schemas, and lookup tables for direct agent reference.
+- **Formal Specification (`type: specification`):** Deterministic formulas, state machines, truth tables, baseline constants, and golden test vectors.
+
+### Tier Hierarchy
+- **Tier 0 (Domain Truth — `.agents/docs/ssot/SSOT-NNNN.md`):** Pure domain context and specifications. Zero upward knowledge of codebase files.
+- **Tier 1 (Technical Plans — `.agents/docs/plans/`):** Cites Tier 0 SSOT documents before code is written.
+- **Tier 2 (Source Implementation — `src/` or `crates/`):** Code and unit tests cite Tier 0 SSOT documents and assert against invariants and golden test vectors.
 
 ---
 
@@ -103,7 +107,7 @@ The **Domain Knowledge & SSOT System** stores immutable, authoritative facts, fo
 
 ## 📝 SSOT Authoring Workflow
 
-1. Utilize the `define-ssot` skill via the primary agent.
-2. Provide the agent with raw domain logic, mathematical formulas, physical constants, or research.
-3. The agent will orchestrate the `ssot-writer` subagent to generate a new `SSOT-[DOM]-NNN.md` document adhering to the canonical Tier 0 template, ensuring Zero-LaTeX and zero upward references.
-4. The agent will automatically register the new SSOT in the table and dependency graph above.
+1. Utilize the `/define-ssot` skill via the primary agent.
+2. Provide domain context, conventions, mathematical formulas, or research references.
+3. The agent selects either the **Flat Context** template (`TEMPLATE-CONTEXT.md`) or **Formal Specification** template (`TEMPLATE-SPEC.md`) and saves the result to `.agents/docs/ssot/` adhering to Zero-LaTeX and zero upward references.
+4. The agent automatically registers the new entry in the ledger table and dependency graph above.

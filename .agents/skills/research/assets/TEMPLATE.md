@@ -1,6 +1,14 @@
-# Research Report: [Topic / Goal]
+---
+id: RESEARCH-NNNN
+title: "[Short Title Describing the Research]"
+date: YYYY-MM-DD
+objective: "[Brief 1-sentence description of the research goal]"
+conclusions: "[Brief 1-2 sentence summary of the primary conclusions]"
+---
 
-> **Date:** [YYYY-MM-DD]
+# RESEARCH-NNNN: [Topic / Goal]
+
+> **Research ID:** `RESEARCH-NNNN` | **Date:** YYYY-MM-DD
 > **Objective:** [Brief 1-2 sentence description of the research goal]
 
 ---
@@ -31,17 +39,3 @@
 
 1. [Source Title](URL) - *Brief description of what was extracted from this source.*
 2. [Source Title](URL) - *Brief description of what was extracted from this source.*
-
----
-
-## 🗃️ Index Metadata
-
-```json
-{
-  "title_and_scope": "[Short title describing the research]",
-  "date": "[YYYY-MM-DD]",
-  "objective": "[Brief 1-sentence objective]",
-  "conclusions": "[Brief 1-2 sentence summary of the conclusions]"
-}
-```
-

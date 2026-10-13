@@ -34,12 +34,12 @@ This document establishes the repository guidelines, architectural boundaries, c
 
 5. **Anti-Hallucination, Bounded Context & Subagent Isolation:**
    - **Contract-First:** Never write implementation code until public interfaces, data types, and function signatures are specified in an approved plan.
-   - **Pseudocode-Driven Tasks:** The strict <= 50-line rule has been replaced. Instead, work must be broken down into atomic logical tasks (e.g., specific functions, components, or files), and explicit **pseudocode** must be drafted for each step.
+   - **Pseudocode-Driven Tasks:** Work must be broken down into atomic logical tasks (e.g., specific functions, components, or files), and explicit **pseudocode** must be drafted for each step.
    - **Subagent Task Isolation:** Implementation tasks targeting isolated files are executed by focused subagent contexts, preventing cross-file pollution and bounding blast radius. The `implementer` strictly translates pseudocode to code.
    - **Boomerang Summary & Verification:** After implementation, the orchestrator awaits a Boomerang Summary and dispatches a `code-reviewer` to verify pseudocode adherence and test passes.
 
 6. **Static Plan Storage (No Active/Archive File Movement):**
-   - All plans reside permanently in `.agents/docs/plans/` (e.g. `PLAN-001.md`).
+   - All plans reside permanently in `.agents/docs/plans/` (e.g. `PLAN-0001.md`).
    - Plan lifecycle status (`draft`, `approved`, `in-progress`, `completed`, `superseded`, `abandoned`) is tracked exclusively in the plan's YAML frontmatter and synchronized in `.agents/docs/plans/INDEX.md`. Files never move between folders upon completion.
 
 7. **Dependency Discipline:**
@@ -53,6 +53,10 @@ This document establishes the repository guidelines, architectural boundaries, c
 2. **No Destructive Commands Without Confirmation:** Never execute destructive or irreversible commands (e.g. `rm -rf`, git hard resets, deleting production directories, dropping database schemas) without explicit user confirmation.
 3. **API & Contract Integrity:** Do not alter established schemas or public interfaces without checking and updating all dependent invocation sites.
 4. **Automated Verification:** Always run the project typecheck, lint, and test suite before declaring a task complete.
+5. **Deliberate Pacing & Turn-Ending Next Steps:**
+   - **No Rushing or Presumptive Urgency:** Never declare that "we are now ready to X" or assume the next step is mandatory. Maintain a calm, deliberate pace.
+   - **Options-Oriented Next Steps:** At the conclusion of any task or research run, offer 2–3 grounded paths forward based on active items in `docs/TASKS.md` and `docs/ROADMAP.md`.
+   - **Explore Alternatives & Pivots:** Always explicitly raise the option to pause, reprioritize, pivot to a different track, or pursue tangential exploration before moving forward.
 
 ---
 
@@ -65,25 +69,26 @@ All domain research, specifications, planning, and implementations follow this t
    - Saves findings to `.agents/docs/research/RESEARCH-NNNN.md` (sequential 4-digit ID) and updates the ledger in `.agents/docs/research/INDEX.md`.
 
 2. **`/define-ssot` (Invariable Domain Truth):**
-   - Formulates project-specific invariable logic, formulas, decision rules, constants, and golden vectors.
+   - Formulates project-specific domain truth as either **Flat Reference Context** (`type: context` — glossaries, policies, schemas, key-value rules) or **Formal Specifications** (`type: specification` — formulas, decision rules, constants, and golden vectors).
    - Saves to `.agents/docs/ssot/SSOT-NNNN.md` (sequential 4-digit ID) and updates the ledger in `.agents/docs/ssot/INDEX.md`.
 
 3. **Deliberate Two-Phase Planning Workflow (Human-in-the-Loop):**
    - **`/plan-human` (Problem Alignment):**
      - Aligns the human-facing problem: problem statement, background, core objectives, non-goals, user stories, acceptance criteria, and edge cases.
      - Scaffolds Part 1 of `.agents/docs/plans/PLAN-NNNN.md`.
-   - **Review Gate (Mandatory Human Review):** Developer audits, refines, and explicitly approves the human problem alignment before proceeding.
+     - **Mandatory Review Gate (HALT):** The agent halts execution. The human developer audits, refines, and explicitly approves the problem alignment before any technical design begins.
    - **`/plan-robot` (Technical Specification):**
+     - Invoked deliberately only after human approval of Part 1.
      - Completes technical contracts: SSOT citations, types, schemas, interfaces, module mapping, unit test targets, and **Pseudocode-Driven Atomic Tasks**.
      - Fills Part 2 of `.agents/docs/plans/PLAN-NNNN.md`.
-   - **Review Gate (Mandatory Human Sign-off):** Developer audits and signs off on the technical specification before execution begins.
+     - **Approval Gate (HALT):** Halts for developer sign-off on technical blueprint before `/execute`.
 
 4. **`/execute` (Orchestrator-Worker Implementation):**
    - Implements the approved plan using the Boomerang Pattern.
    - Spawns the `implementer` subagent to translate pseudocode into code, and waits for a Boomerang Summary.
    - Dispatches the `code-reviewer` to run hermetic tests, verify pseudocode adherence, and update checklist progress.
 
-5. **`/archive-plan` (QA Verification & Lifecycle Closure):**
+5. **`/plan-archive` (QA Verification & Lifecycle Closure):**
    - Validates the 7-Point QA checklist.
    - Logs retrospective notes and runtime architectural deviations.
    - Updates plan frontmatter (`status: completed`, `completed_at: YYYY-MM-DD`) and ledger status in `.agents/docs/plans/INDEX.md`.
@@ -100,7 +105,7 @@ Specific skills and subagent specs are located under [`.agents/skills/`](.agents
 | `.agents/docs/plans/` | Consolidated plan specifications & ledger | [INDEX.md](.agents/docs/plans/INDEX.md) |
 | `.agents/docs/research/` | Grounded reality research reports | [INDEX.md](.agents/docs/research/INDEX.md) |
 | `.agents/docs/ssot/` | Single Source of Truth vault (Tier 0 invariable domain truth) | [INDEX.md](.agents/docs/ssot/INDEX.md) |
-| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [archive-plan](.agents/skills/archive-plan/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
+| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [plan-archive](.agents/skills/plan-archive/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
 | `.agents/subagents/` | Subagent role system prompts | [implementer.md](.agents/subagents/implementer.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [researcher.md](.agents/subagents/researcher.md) |
 | `docs/` | Human-facing living system documentation | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [ROADMAP.md](docs/ROADMAP.md), [TASKS.md](docs/TASKS.md) |
 | `.vscode/` | Workspace editor & sandbox configuration | [settings.json](.vscode/settings.json), [extensions.json](.vscode/extensions.json) |
@@ -123,7 +128,7 @@ Specific skills and subagent specs are located under [`.agents/skills/`](.agents
 
 ## ✅ 6. Pre-Completion 7-Point QA Checklist
 
-Prior to marking any task or plan as complete (`/archive-plan`):
+Prior to marking any task or plan as complete (`/plan-archive`):
 
 - [ ] **1. Type Check:** Clean compilation with zero type errors (`cargo check --workspace --all-targets`).
 - [ ] **2. Unit Tests:** 100% pass rate for touched and newly created modules (`cargo test --workspace`).

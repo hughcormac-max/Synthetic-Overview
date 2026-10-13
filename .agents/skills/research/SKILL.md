@@ -17,14 +17,14 @@ description: Conduct online research grounded in reality through web search and 
 2. **Determine Sequential Research ID:**
    - Inspect `.agents/docs/research/INDEX.md` to find the highest existing `RESEARCH-NNNN` ID.
    - Increment the number to determine the new 4-digit zero-padded sequential ID (e.g. `RESEARCH-0001`, `RESEARCH-0002`).
-3. **Execute Grounded Research (via `research` Subagent or Search Tools):**
-   - Delegate to the native `research` subagent (or execute targeted web search using `search_web` and `read_url_content`).
+3. **Execute Grounded Research:**
+   - Delegate to the `researcher` subagent (TypeName: `researcher`, Workspace: `inherit`).
    - Extract raw, non-hallucinated facts, documentation excerpts, and verifiable domain data.
    - Collect exact primary source URLs for all findings.
 4. **Synthesize Report using Template:**
-   - Ingest findings into the template at `.agents/skills/research/assets/template.md`.
+   - Ingest findings into the template at `.agents/skills/research/assets/TEMPLATE.md`.
+   - Populate the YAML frontmatter (`id`, `title`, `date`, `objective`, `conclusions`).
    - Adhere strictly to the project's Zero-LaTeX plain-text math rules.
-   - Include the JSON `Index Metadata` block at the end of the report.
 5. **Save Report & Update Ledger:**
    - Save to `.agents/docs/research/RESEARCH-NNNN.md`.
    - Append a new row to `.agents/docs/research/INDEX.md` with ID, title, date, objective, conclusions, and link.

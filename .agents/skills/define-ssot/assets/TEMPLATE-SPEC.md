@@ -1,46 +1,36 @@
 ---
 id: SSOT-NNNN
-title: "[Short, Descriptive Domain SSOT Title]"
+title: "[Short, Descriptive Domain Specification Title]"
 domain: "[e.g. Astrodynamics / Financial Risk / Tax Logic / Cryptography]"
-category: specification # specification | formula | decision-tree | constants-table
+type: specification # context | specification
 status: approved # draft | approved | deprecated
-created: [YYYY-MM-DD]
-updated: [YYYY-MM-DD]
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
 sources:
   - "[Author / Standard / Regulatory Body], '[Title / RFC / Standard Number]', [Publisher / Link], [Year]"
 ---
 
-# SSOT-NNNN: [Short, Descriptive Domain SSOT Title]
+# SSOT-NNNN: [Short, Descriptive Domain Specification Title]
 
-> **SSOT ID:** `SSOT-NNNN` | **Category:** `[specification / formula / decision-tree / constants-table]`
-> **Status:** `approved` | **Last Updated:** [YYYY-MM-DD]
-> **Authoritative Sources:** [List authoritative papers, standards, specifications, or internal domain directives]
+> **SSOT ID:** `SSOT-NNNN` | **Type:** `specification` | **Status:** `approved` | **Updated:** YYYY-MM-DD
 
 ---
 
-## 🎯 1. Statement of Truth & Domain Context
+## 1. Scope & Core Invariants
 
-### 1.1 Purpose & Scope
-
-[Describe the exact domain reality, algorithm, regulatory policy, or mathematical foundation defined by this SSOT.]
-
-### 1.2 Core Domain Invariants
+[Describe the exact algorithm, regulatory policy, or mathematical foundation defined by this SSOT.]
 
 - **Invariant 1:** [Absolute ground truth that must never be violated.]
 - **Invariant 2:** [Constraint on input ranges, state transitions, or physical limits.]
 
 ---
 
-## 📐 2. Deterministic Formulas & Calculation Rules
+## 2. Deterministic Formulas & Variable Dictionary
 
-*All formulations must use clean plain-text/ASCII notation (Zero-LaTeX).*
-
-### 2.1 Formula Definitions
+*Include this section ONLY if mathematical calculations apply. All formulations must use clean plain-text/ASCII notation (Zero-LaTeX).*
 
 - **[Formula / Metric Name]:**
   `result = base_value * (1 + rate * time) - damping_factor`
-
-### 2.2 Variable Dictionary & Standard Units
 
 | Variable | Meaning | Standard Unit (SI/UCUM/ISO) | Valid Range |
 | :--- | :--- | :--- | :--- |
@@ -50,19 +40,15 @@ sources:
 
 ---
 
-## 🔄 3. Logic Loops, Decision Trees & State Transitions
+## 3. State Transitions & Decision Rules
 
-*Explicit algorithmic branching, state machines, and loop conditions.*
-
-### 3.1 State Machine / Transition Matrix
+*Include this section ONLY if state machines, branching truth tables, or algorithmic loops apply.*
 
 ```text
 [State: IDLE] --- (Event: INITIALIZE) ---> [State: PROCESSING]
 [State: PROCESSING] --- (Condition: success == true) ---> [State: RESOLVED]
 [State: PROCESSING] --- (Condition: error_count >= 3) ---> [State: FAILED]
 ```
-
-### 3.2 Decision Rules & Branching Truth Table
 
 | Condition A | Condition B | Threshold Check | Resulting State / Action |
 | :--- | :--- | :--- | :--- |
@@ -72,9 +58,9 @@ sources:
 
 ---
 
-## 📊 4. Constants, Figures & Baseline Data Tables
+## 4. Constants & Baseline Figures
 
-*Authoritative numbers, conversion factors, and fixed parameters.*
+*Include this section ONLY if fixed parameters or conversion factors apply.*
 
 | Parameter / Constant | Exact Value | Standard Unit | Source / Authority |
 | :--- | :--- | :--- | :--- |
@@ -83,36 +69,22 @@ sources:
 
 ---
 
-## ⚠️ 5. Known Hallucination Traps & Anti-Patterns
+## 5. Known Hallucination Traps & Anti-Patterns
 
 *Specific false assumptions, obsolete patterns, or subtle traps that AI coding agents commonly fall into in this domain.*
 
-- [ ] **Trap 1 (Unit Confusion):** Common error is assuming angles are in degrees instead of radians. All trigonometric operations require radians.
-- [ ] **Trap 2 (Sign Convention):** Damping forces must be subtracted, not added. Adding introduces artificial energy into the system.
-- [ ] **Trap 3 (Boundary Misinterpretation):** At `value == 0.0`, the system must not divide by zero; apply epsilon threshold `eps = 1e-12`.
-- [ ] **Trap 4 (Timezone / Date Bias):** Never assume local time; all epoch timestamps must parse as UTC.
+- **Trap 1 (Unit Confusion):** Common error is assuming angles are in degrees instead of radians. All trigonometric operations require radians.
+- **Trap 2 (Sign Convention):** Damping forces must be subtracted, not added. Adding introduces artificial energy into the system.
+- **Trap 3 (Boundary Misinterpretation):** At `value == 0.0`, the system must not divide by zero; apply epsilon threshold `eps = 1e-12`.
 
 ---
 
-## 🧪 6. Golden Test Vectors & Benchmark Truth
+## 6. Golden Test Vectors
 
-*Deterministic input-to-output test cases for hermetic unit testing.*
+*Include this section ONLY if deterministic input-to-output test cases apply.*
 
 | Vector ID | Test Scenario | Input Parameters | Exact Expected Output | Tolerance / Epsilon |
 | :--- | :--- | :--- | :--- | :--- |
 | `VEC-01` | Nominal calculation | `base_value = 100.0`, `rate = 0.05`, `time = 10.0` | `result = 150.0` | `+/- 1e-6` |
 | `VEC-02` | Zero boundary check | `base_value = 0.0`, `rate = 0.05`, `time = 10.0` | `result = 0.0` | Exact `0.0` |
 | `VEC-03` | Maximum rate clamp | `base_value = 100.0`, `rate = 2.0`, `time = 1.0` | Throws `DomainRangeError` | N/A |
-
----
-
-## 🗃️ Index Metadata
-
-```json
-{
-  "title_and_domain_scope": "[Short title & domain scope]",
-  "category": "[specification / formula / decision-tree / constants-table]",
-  "key_invariants_formulas": "[Brief summary of key formulas or invariants]",
-  "status": "approved"
-}
-```

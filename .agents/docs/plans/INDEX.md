@@ -54,5 +54,5 @@ branch: "[branch-name]"
 1. **`draft`:** Initialized by `/plan-human` and technical contracts completed by `/plan-robot`.
 2. **`approved`:** Audited and approved by human developer.
 3. **`in-progress`:** Picked up by `/execute` for atomic implementation.
-4. **`completed`:** Passed the 7-Point QA verification in `/archive-plan` with retrospective notes.
+4. **`completed`:** Passed the 7-Point QA verification in `/plan-archive` with retrospective notes.
 5. **`superseded` / `abandoned`:** Replaced by newer architecture or deprioritized.

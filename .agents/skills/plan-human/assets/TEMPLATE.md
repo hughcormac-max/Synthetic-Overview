@@ -5,7 +5,7 @@ status: draft # draft | approved | in-progress | completed | superseded | abando
 author: "[Author / Agent Name]"
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
-completed_at: "" # Populated upon completion by /archive-plan
+completed_at: "" # Populated upon completion by /plan-archive
 branch: "[branch-name]"
 ---
 
@@ -17,7 +17,7 @@ branch: "[branch-name]"
 
 ---
 
-# 🧠 PART 1: HUMAN PROBLEM ALIGNMENT
+# 🧑‍💻 PART 1: HUMAN PROBLEM ALIGNMENT
 *(Authored via `/plan-human` — Aligns user-facing intent, boundaries, and acceptance criteria prior to technical design)*
 
 ## 🎯 1. Problem Statement & Context
@@ -27,11 +27,11 @@ branch: "[branch-name]"
 - [Objective 1: What concrete capability will be unlocked?]
 - [Objective 2: What user workflow is improved or enabled?]
 
-## 🛑 3. Non-Goals & Exclusions
+## 🚫 3. Non-Goals & Exclusions
 - [Non-Goal 1: What is explicitly out of scope for this plan?]
 - [Non-Goal 2: What follow-ups are deferred to future plans?]
 
-## 👥 4. User Stories & Interaction Journeys
+## 👤 4. User Stories & Interaction Journeys
 - **As a:** [type of user]
 - **I want to:** [perform an action]
 - **So that:** [achieve a specific outcome]
@@ -42,8 +42,9 @@ branch: "[branch-name]"
 3. Result is verified by...
 
 ## ✅ 5. Acceptance Criteria
-- [ ] [Criterion 1: Observable behavior defining success]
-- [ ] [Criterion 2: Observable behavior defining success]
+*Use EARS syntax: "WHEN [trigger], the system SHALL [behavior]"*
+- [ ] WHEN [trigger], the system SHALL [observable behavior]
+- [ ] IF [error condition], THEN the system SHALL [recovery behavior]
 
 ## ⚠️ 6. Edge Cases & Boundary Behaviors
 - **Empty State / Zero Inputs:** [How does the system respond?]
@@ -53,89 +54,86 @@ branch: "[branch-name]"
 ---
 
 # 🤖 PART 2: ROBOT TECHNICAL SPECIFICATIONS
-*(Authored via `/plan-robot` — Defines contracts, interfaces, and pseudocode-driven atomic tasks)*
+*(Authored via `/plan-robot` — Defines contracts, interfaces, and pseudocode-driven atomic implementation tasks)*
 
-## 📚 7. Authoritative Domain References (Tier 0)
+## 📐 7. Authoritative Domain References (Tier 0)
 *Downlink to immutable domain specifications, formulas, constants, and truth tables in `.agents/docs/ssot/`:*
 - [SSOT-NNNN: Domain SSOT Title](../../ssot/SSOT-NNNN.md) — *[Specify applicable formulas, constants, decision trees, or golden vectors cited from this SSOT]*
 
-## 🏗️ 8. Domain Types & Data Contracts
-```typescript
-// Define explicit domain models, schemas, and contracts here
-export interface ExampleDomainContract {
-  readonly id: string;
-  readonly createdAt: number;
-  readonly status: 'pending' | 'active' | 'completed';
+## 🧩 8. Domain Types & Data Contracts
+```rust
+// Define explicit domain models, ECS components, schemas, and contracts here
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExampleDomainContract {
+    pub id: u64,
+    pub created_at: u64,
 }
 ```
 
 ## 🔌 9. Public API / Service Signatures
-```typescript
-// Define service interfaces, function signatures, and Result types
-export interface ExampleService {
-  executeTask(payload: ExampleDomainContract): Promise<Result<void, DomainError>>;
-}
+```rust
+// Define service interfaces, pure function signatures, and Result types
+pub fn execute_transformation(payload: &ExampleDomainContract) -> Result<(), DomainError>;
 ```
 
-## 📂 10. File-by-File Module Mapping
-- **Domain Layer:** `src/core/...`
-- **Application Layer:** `src/services/...`
-- **Infrastructure Layer:** `src/adapters/...`
-- **Presentation Layer:** `src/components/...`
+## 🗺️ 10. File-by-File Module Mapping
+- **Domain Layer:** `crates/...`
+- **Application Layer:** `crates/...`
+- **Infrastructure Layer:** `crates/...`
+- **Presentation Layer:** `crates/...`
 
-## ⚙️ 11. Pseudocode-Driven Atomic Logical Tasks
-*Ordered checklist broken down into logical tasks (e.g., specific functions, components). **MANDATORY INVARIANT: Every task MUST include explicit pseudocode detailing the algorithmic steps to be implemented.***
+## 🛠️ 11. Atomic Logical Tasks (PSEUDOCODE DRIVEN)
+*Ordered checklist broken down into logical components (e.g., a specific function, struct, or system). **MANDATORY INVARIANT: Each step must include strict pseudocode or algorithmic steps for the Implementer to follow.***
 
-- [ ] **Task 1: Data Contracts & Schemas** *(Target: `src/core/types.ts`)*
-  - **Pseudocode:**
+- [ ] **Step 1: Data Contracts & Schemas** *(Target: `crates/...`)*
+  - **Pseudocode Spec:**
     ```text
-    Define interface ExampleDomainContract with fields id, createdAt, status.
-    Ensure fields are readonly.
+    Define ExampleDomainContract struct
+    Include id and created_at fields
     ```
-- [ ] **Task 2: Pure Domain Pipeline** *(Target: `src/core/calculator.ts`)*
-  - **Pseudocode:**
+- [ ] **Step 2: Pure Domain Pipeline** *(Target: `crates/...`)*
+  - **Pseudocode Spec:**
     ```text
-    Function calculate_trajectory(input: Data):
-      If input is null, return Error
-      result = apply SSOT-NNNN formula to input
-      Return result
+    Create function calculate_transformation(input: &ExampleDomainContract)
+    Apply SSOT-NNNN constant K
+    Return Result (Ok / Err)
     ```
-- [ ] **Task 3: Domain Unit Tests** *(Target: `tests/core/calculator.test.ts`)*
-  - **Pseudocode:**
+- [ ] **Step 3: Domain Unit Tests** *(Target: `crates/...`)*
+  - **Pseudocode Spec:**
     ```text
-    Test case 1: Nominal path using golden vector.
-    Test case 2: Empty inputs return explicit error.
+    Test 1: Nominal path with valid input and golden vector assertion
+    Test 2: Edge case boundary validation
     ```
-- [ ] **Task 4: Full Regression & Verification**
-  - [ ] Run typecheck.
-  - [ ] Run test suite with 100% pass rate.
+- [ ] **Step 4: Full Regression & Verification**
+  - [ ] Run typecheck & clippy (`cargo check --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`).
+  - [ ] Run test suite with 100% pass rate (`cargo test --workspace`).
 
 ## 🧪 12. Unit Test Targets & Verification Commands
 
 ### 12.1 Unit Test Coverage Targets
-| Module / File | Test File | Key Scenarios Covered |
+| Module / File | Test Location | Key Scenarios Covered |
 | :--- | :--- | :--- |
-| `src/core/example.ts` | `tests/core/example.test.ts` | Nominal path, empty inputs, boundary thresholds, golden vector validation |
+| `crates/...` | `crates/...` | Nominal path, empty inputs, boundary thresholds, golden vector validation |
 
 ### 12.2 Verification Commands
 ```bash
 # Typecheck
-npm run typecheck
+cargo check --workspace --all-targets
 
 # Lint
-npm run lint
+cargo clippy --workspace --all-targets -- -D warnings
 
 # Test Suite
-npm test
+cargo test --workspace
 ```
 
 ---
 
-# 📝 PART 3: VERIFICATION & RETROSPECTIVE
-*(Updated during execution and closed via `/archive-plan`)*
+# 📋 PART 3: VERIFICATION & RETROSPECTIVE
+*(Updated during execution and closed via `/plan-archive`)*
 
-## 🔧 13. Runtime Deviations & Architectural Pivots
+## 📝 13. Runtime Deviations & Architectural Pivots
 - *[None logged during drafting. Document any runtime adjustments here.]*
 
-## 🏁 14. Retrospective & Follow-Up Items
+## 💡 14. Retrospective & Follow-Up Items
 - *[None logged during drafting. Document lessons learned and follow-ups here.]*
