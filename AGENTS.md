@@ -12,7 +12,7 @@ This document establishes the repository guidelines, architectural boundaries, c
 ## 🏛️ 1. Core Tenets & Non-Negotiable Invariants
 
 1. **Default Memory Palace Grounding (Always-On Truth Retrieval):**
-   - Standing project identity (`Knowledge/Entities/Projects/260830_HOC_Synthetic_Overview.md`), domain research (`Knowledge/Distilled/Research_And_Review/`), committed system specifications (`Knowledge/Distilled/Design_And_Development/`), and engineering standards (`Knowledge/Distilled/Standards_And_Guidance/`) reside in `G:\My Drive\06_Memory Palace`.
+   - Standing project identity (`Knowledge/Entities/Projects/260830_HOC_Synthetic_Overview.md`), declarative models, domain research, committed system specifications, and engineering standards (`Knowledge/Distilled/Concepts/`), repeatable workflows (`Knowledge/Distilled/Processes/`), and actionable implementation milestones (`Knowledge/Distilled/Tasks/`) reside in `G:\My Drive\06_Memory Palace`.
    - **Consult by Default:** Before answering project-specific questions, proposing architecture, or drafting plans, check the relevant nodes in `G:\My Drive\06_Memory Palace\Knowledge\` and any active scratchpad in `.agents/work/`—never hallucinate project rules from pre-trained knowledge.
    - **Inbox Dropbox Boundary:** When operating from a code workspace, read freely from `G:\My Drive\06_Memory Palace\Knowledge\`, but only write to `G:\My Drive\06_Memory Palace\Inbox\Context_Dumps\`. Never directly mutate `Episodic/` or `Knowledge/` from a code workspace (graph ingestion is handled by `/ingest-inbox` inside the Memory Palace).
 
@@ -66,7 +66,7 @@ This document establishes the repository guidelines, architectural boundaries, c
 The workspace combines **always-on Memory Palace grounding** and **Antigravity's native `/plan` workflow** with two custom skills:
 
 1. **Default Memory Palace Lookup (Automatic):**
-   - On any query or task, the agent consults `G:\My Drive\06_Memory Palace\Knowledge\` (`Entities/Projects/260830_HOC_Synthetic_Overview.md`, `Distilled/Design_And_Development/`, `Distilled/Research_And_Review/`, `Distilled/Standards_And_Guidance/`) and any active scratchpad in `.agents/work/` by default.
+   - On any query or task, the agent consults `G:\My Drive\06_Memory Palace\Knowledge\` (`Entities/Projects/260830_HOC_Synthetic_Overview.md`, `Distilled/Concepts/`, `Distilled/Processes/`, `Distilled/Tasks/`) and any active scratchpad in `.agents/work/` by default.
 
 2. **`/discuss` (Freeform Ideation, Iterative Research & Live Scratchpad):**
    - Used to brainstorm solutions, explore trade-offs, debate architecture, and decide on next steps or roadmap items.
@@ -79,11 +79,11 @@ The workspace combines **always-on Memory Palace grounding** and **Antigravity's
 
 4. **`/push-to-memory` (Commit Session & Scratchpad to Memory Palace):**
    - Runs pre-push verification if code was modified.
-   - Synthesizes both the **active conversation context** and the **`.agents/work/SCRATCHPAD-*.md` file** into a structured Context Dump in `G:\My Drive\06_Memory Palace\Inbox\Context_Dumps\YYYY_MM_DD_<ProjectSlug>_<Topic>.md` across four target buckets:
+   - Synthesizes both the **active conversation context** and the **`.agents/work/SCRATCHPAD-*.md` file** into a structured Context Dump in `G:\My Drive\06_Memory Palace\Inbox\Context_Dumps\YYYY_MM_DD_<ProjectSlug>_<Topic>.md` across target buckets:
      - `-> Episodic/Projects/` (Session summary, completed milestones & immediate next steps)
-     - `-> Knowledge/Entities/Projects/` (Roadmap items, parked ideas & project scope updates)
-     - `-> Knowledge/Distilled/Research_And_Review/` (Domain research, derivations & trade-off analyses)
-     - `-> Knowledge/Distilled/Design_And_Development/` (Committed architectural choices & SSOT contracts)
+     - `-> Knowledge/Entities/Projects/` (Standing project scope & MOC updates)
+     - `-> Knowledge/Distilled/Concepts/` (Domain research, derivations, trade-off analyses & committed architectural specs/SSOTs)
+     - `-> Knowledge/Distilled/Processes/` & `-> Knowledge/Distilled/Tasks/` (Repeatable workflows & actionable milestones/tasks)
    - Purges exported `.agents/work/*.md` scratchpads so the Git repository stays clean.
 
 Specific skill definitions are located under [`.agents/skills/`](.agents/skills/).
@@ -122,6 +122,6 @@ Prior to pushing a coding session (`/push-to-memory`):
 
 - [ ] **1. Type Check:** Clean compilation with zero type errors (`cargo check --workspace --all-targets`).
 - [ ] **2. Unit & Regression Tests:** 100% pass rate across unit and regression test suites (`cargo test --workspace`).
-- [ ] **3. Contract Adherence:** Code strictly satisfies cited Memory Palace `Design_And_Development/` specs.
+- [ ] **3. Contract Adherence:** Code strictly satisfies cited Memory Palace `Knowledge/Distilled/Concepts/` specs.
 - [ ] **4. Zero LaTeX Audit:** Zero unescaped dollar signs (`$...$`, `$$...$$`) or LaTeX macros in docs, Context Dumps, code comments, or chat output.
 - [ ] **5. Clean Git Status:** Transient `.agents/work/*.md` scratchpads are exported to `06_Memory Palace\Inbox\Context_Dumps\` and cleaned from the repo; no lingering debug artifacts remain.

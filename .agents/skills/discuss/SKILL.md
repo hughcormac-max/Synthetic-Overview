@@ -15,7 +15,7 @@ description: >-
 
 ### 1. Default Memory Palace Grounding
 - Check [AGENTS.md](../../../AGENTS.md) for the bound `Project Entity Node` (`[[YYMMDD_ORG_ProjectName]]`).
-- Consult relevant standing notes in `G:\My Drive\06_Memory Palace\Knowledge\` (`Entities/Projects/`, `Distilled/Design_And_Development/`, `Distilled/Research_And_Review/`, `Distilled/Standards_And_Guidance/`) so the discussion builds on existing project truth without hallucinating.
+- Consult relevant standing notes in `G:\My Drive\06_Memory Palace\Knowledge\` (`Entities/Projects/`, `Distilled/Concepts/`, `Distilled/Processes/`, `Distilled/Tasks/`) so the discussion builds on existing project truth without hallucinating.
 
 ### 2. Initialize & Maintain the Live Scratchpad (`.agents/work/SCRATCHPAD-<slug>.md`)
 - Create or open `.agents/work/SCRATCHPAD-<slug>.md` (or reuse an active scratchpad in `.agents/work/`).
