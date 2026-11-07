@@ -20,7 +20,6 @@
   "antigravity.sandbox.enabled": true,
   "antigravity.permissions.promptOnDestructiveActions": true,
   "antigravity.rules.enforcement": "strict",
-  "antigravity.plans.directory": ".agents/work",
   "git.autofetch": false,
   "git.refreshOnWindowFocus": false
 }
