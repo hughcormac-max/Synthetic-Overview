@@ -93,6 +93,10 @@ All domain research, specifications, planning, and implementations follow this t
    - Logs retrospective notes and runtime architectural deviations.
    - Updates plan frontmatter (`status: completed`, `completed_at: YYYY-MM-DD`) and ledger status in `.agents/docs/plans/INDEX.md`.
 
+6. **`/close-to-palace` (Memory Palace Closeout & Repo Hygiene):**
+   - Packages session execution progress, text-heavy domain research (`Research_And_Review`), and committed architectural specifications (`Design_And_Development`) into a structured Context Dump in `G:\My Drive\06_Memory Palace\Inbox\Context_Dumps\`.
+   - Purges transient research and scratch markdown files from the code repository so the permanent human-facing Source of Truth shifts to the Memory Palace.
+
 Specific skills and subagent specs are located under [`.agents/skills/`](.agents/skills/) and [`.agents/subagents/`](.agents/subagents/).
 
 ---
@@ -105,7 +109,7 @@ Specific skills and subagent specs are located under [`.agents/skills/`](.agents
 | `.agents/docs/plans/` | Consolidated plan specifications & ledger | [INDEX.md](.agents/docs/plans/INDEX.md) |
 | `.agents/docs/research/` | Grounded reality research reports | [INDEX.md](.agents/docs/research/INDEX.md) |
 | `.agents/docs/ssot/` | Single Source of Truth vault (Tier 0 invariable domain truth) | [INDEX.md](.agents/docs/ssot/INDEX.md) |
-| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [plan-archive](.agents/skills/plan-archive/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md) |
+| `.agents/skills/` | Actionable skills & slash commands | [plan-human](.agents/skills/plan-human/SKILL.md), [plan-robot](.agents/skills/plan-robot/SKILL.md), [execute](.agents/skills/execute/SKILL.md), [plan-archive](.agents/skills/plan-archive/SKILL.md), [research](.agents/skills/research/SKILL.md), [define-ssot](.agents/skills/define-ssot/SKILL.md), [ask-docs](.agents/skills/ask-docs/SKILL.md), [close-to-palace](.agents/skills/close-to-palace/SKILL.md) |
 | `.agents/subagents/` | Subagent role system prompts | [implementer.md](.agents/subagents/implementer.md), [code-reviewer.md](.agents/subagents/code-reviewer.md), [researcher.md](.agents/subagents/researcher.md) |
 | `docs/` | Human-facing living system documentation | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [ROADMAP.md](docs/ROADMAP.md), [TASKS.md](docs/TASKS.md) |
 | `.vscode/` | Workspace editor & sandbox configuration | [settings.json](.vscode/settings.json), [extensions.json](.vscode/extensions.json) |
