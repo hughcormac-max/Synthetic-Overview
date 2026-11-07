@@ -4,7 +4,7 @@
     "**/dist": true,
     "**/build": true,
     "**/.git": true,
-    "**/.agents/docs/**": false
+    "**/.agents/work/**": false
   },
   "files.watcherExclude": {
     "**/node_modules/**": true,
@@ -20,7 +20,7 @@
   "antigravity.sandbox.enabled": true,
   "antigravity.permissions.promptOnDestructiveActions": true,
   "antigravity.rules.enforcement": "strict",
-  "antigravity.plans.directory": ".agents/docs/plans",
+  "antigravity.plans.directory": ".agents/work",
   "git.autofetch": false,
   "git.refreshOnWindowFocus": false
 }

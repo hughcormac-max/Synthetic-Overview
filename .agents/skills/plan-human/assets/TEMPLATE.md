@@ -1,19 +1,19 @@
 ---
-id: PLAN-NNNN
+id: PLAN-<slug>
 title: "[Short, Descriptive Title]"
-status: draft # draft | approved | in-progress | completed | superseded | abandoned
+project: "[[YYMMDD_ORG_ProjectName]]"
+status: draft # draft | approved | in-progress | completed
 author: "[Author / Agent Name]"
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
-completed_at: "" # Populated upon completion by /plan-archive
 branch: "[branch-name]"
 ---
 
-# PLAN-NNNN: [Short, Descriptive Title]
+# PLAN-<slug>: [Short, Descriptive Title]
 
 > **Status:** `draft` | **Created:** YYYY-MM-DD | **Last Updated:** YYYY-MM-DD
-> **Author:** [Author / Agent Name] | **Branch:** [branch-name]
-> **Permanent Location:** `.agents/docs/plans/PLAN-NNNN.md`
+> **Project Node:** `[[YYMMDD_ORG_ProjectName]]` | **Branch:** `[branch-name]`
+> **Staged Location:** `.agents/work/PLAN-<slug>.md` *(Exported & purged via `/close-to-palace` upon completion)*
 
 ---
 
@@ -29,7 +29,7 @@ branch: "[branch-name]"
 
 ## 🚫 3. Non-Goals & Exclusions
 - [Non-Goal 1: What is explicitly out of scope for this plan?]
-- [Non-Goal 2: What follow-ups are deferred to future plans?]
+- [Non-Goal 2: What follow-ups are deferred to future sessions?]
 
 ## 👤 4. User Stories & Interaction Journeys
 - **As a:** [type of user]
@@ -54,86 +54,90 @@ branch: "[branch-name]"
 ---
 
 # 🤖 PART 2: ROBOT TECHNICAL SPECIFICATIONS
-*(Authored via `/plan-robot` — Defines contracts, interfaces, and pseudocode-driven atomic implementation tasks)*
+*(Authored via `/plan-robot` — Defines Memory Palace spec citations, interfaces, and pseudocode-driven atomic implementation tasks)*
 
-## 📐 7. Authoritative Domain References (Tier 0)
-*Downlink to immutable domain specifications, formulas, constants, and truth tables in `.agents/docs/ssot/`:*
-- [SSOT-NNNN: Domain SSOT Title](../../ssot/SSOT-NNNN.md) — *[Specify applicable formulas, constants, decision trees, or golden vectors cited from this SSOT]*
+## 📐 7. Authoritative Memory Palace & Research References
+*Cite standing specifications in `G:\My Drive\06_Memory Palace\Knowledge\Distilled\` (`Design_And_Development/`, `Research_And_Review/`) or staged `.agents/work/RESEARCH-*.md` spikes:*
+- `[[Design_And_Development_Node_Name]]` — *[Specify applicable rules, plain-text formulas, constants, or invariants cited from this node]*
+- `[[Research_And_Review_Node_Name]]` — *[Specify supporting domain derivations or trade-off conclusions]*
 
 ## 🧩 8. Domain Types & Data Contracts
-```rust
-// Define explicit domain models, ECS components, schemas, and contracts here
-#[derive(Debug, Clone, PartialEq)]
-pub struct ExampleDomainContract {
-    pub id: u64,
-    pub created_at: u64,
+```typescript
+// Define explicit domain models, schemas, and contracts here
+export interface ExampleDomainContract {
+  readonly id: string;
+  readonly createdAt: number;
+  readonly status: 'pending' | 'active' | 'completed';
 }
 ```
 
 ## 🔌 9. Public API / Service Signatures
-```rust
-// Define service interfaces, pure function signatures, and Result types
-pub fn execute_transformation(payload: &ExampleDomainContract) -> Result<(), DomainError>;
+```typescript
+// Define service interfaces, function signatures, and Result types
+export interface ExampleService {
+  executeTask(payload: ExampleDomainContract): Promise<Result<void, DomainError>>;
+}
 ```
 
 ## 🗺️ 10. File-by-File Module Mapping
-- **Domain Layer:** `crates/...`
-- **Application Layer:** `crates/...`
-- **Infrastructure Layer:** `crates/...`
-- **Presentation Layer:** `crates/...`
+- **Domain Layer:** `src/core/...`
+- **Application Layer:** `src/services/...`
+- **Infrastructure Layer:** `src/adapters/...`
+- **Presentation Layer:** `src/components/...`
 
 ## 🛠️ 11. Atomic Logical Tasks (PSEUDOCODE DRIVEN)
-*Ordered checklist broken down into logical components (e.g., a specific function, struct, or system). **MANDATORY INVARIANT: Each step must include strict pseudocode or algorithmic steps for the Implementer to follow.***
+*Ordered checklist broken down into logical components (e.g., a specific function, class, or schema). **MANDATORY INVARIANT: Each step must include strict pseudocode or algorithmic steps for the Implementer to follow.***
 
-- [ ] **Step 1: Data Contracts & Schemas** *(Target: `crates/...`)*
+- [ ] **Step 1: Data Contracts & Schemas** *(Target: `src/core/types.ts`)*
   - **Pseudocode Spec:**
     ```text
-    Define ExampleDomainContract struct
-    Include id and created_at fields
+    Define ExampleDomainContract interface
+    Include id, createdAt, and status fields
     ```
-- [ ] **Step 2: Pure Domain Pipeline** *(Target: `crates/...`)*
+- [ ] **Step 2: Pure Domain Pipeline** *(Target: `src/core/calculator.ts`)*
   - **Pseudocode Spec:**
     ```text
-    Create function calculate_transformation(input: &ExampleDomainContract)
-    Apply SSOT-NNNN constant K
-    Return Result (Ok / Err)
+    Create function calculateTransformation(input: ExampleDomainContract)
+    Apply formula from [[Design_And_Development_Node_Name]]
+    Return Result object (success/failure)
     ```
-- [ ] **Step 3: Domain Unit Tests** *(Target: `crates/...`)*
+- [ ] **Step 3: Domain Unit Tests** *(Target: `tests/core/calculator.test.ts`)*
   - **Pseudocode Spec:**
     ```text
-    Test 1: Nominal path with valid input and golden vector assertion
-    Test 2: Edge case boundary validation
+    Test 1: Nominal path with valid input
+    Test 2: Edge case where input status is 'pending'
     ```
 - [ ] **Step 4: Full Regression & Verification**
-  - [ ] Run typecheck & clippy (`cargo check --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`).
-  - [ ] Run test suite with 100% pass rate (`cargo test --workspace`).
+  - [ ] Run typecheck (`strict: true`).
+  - [ ] Run test suite with 100% pass rate.
 
 ## 🧪 12. Unit Test Targets & Verification Commands
 
 ### 12.1 Unit Test Coverage Targets
-| Module / File | Test Location | Key Scenarios Covered |
+| Module / File | Test File | Key Scenarios Covered |
 | :--- | :--- | :--- |
-| `crates/...` | `crates/...` | Nominal path, empty inputs, boundary thresholds, golden vector validation |
+| `src/core/example.ts` | `tests/core/example.test.ts` | Nominal path, empty inputs, boundary thresholds, golden vector validation |
 
 ### 12.2 Verification Commands
 ```bash
 # Typecheck
-cargo check --workspace --all-targets
+npm run typecheck
 
 # Lint
-cargo clippy --workspace --all-targets -- -D warnings
+npm run lint
 
 # Test Suite
-cargo test --workspace
+npm test
 ```
 
 ---
 
-# 📋 PART 3: VERIFICATION & RETROSPECTIVE
-*(Updated during execution and closed via `/plan-archive`)*
+# 📋 PART 3: EXECUTION DEVIATIONS & PALACE DISTILLATION NOTES
+*(Updated during `/execute` and packaged into `06_Memory Palace\Inbox\Context_Dumps\` via `/close-to-palace`)*
 
 ## 📝 13. Runtime Deviations & Architectural Pivots
-- *[None logged during drafting. Document any runtime adjustments here.]*
+- *[None logged during drafting. Document any runtime adjustments here during `/execute`.]*
 
-## 💡 14. Retrospective & Follow-Up Items
-- *[None logged during drafting. Document lessons learned and follow-ups here.]*
+## 🏛️ 14. Memory Palace Distillation Directives
+- **New/Updated `Design_And_Development/` Specs:** *[Note whether this plan introduces a new spec node, accretes onto `[[Existing_Node]]`, or supersedes `[[Old_Node]]`]*
+- **Follow-Up Action Items (`Episodic/Projects/`):** *[List remaining `- [ ]` next steps to record in the session project log]*

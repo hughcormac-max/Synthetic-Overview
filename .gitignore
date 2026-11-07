@@ -90,10 +90,11 @@ $RECYCLE.BIN/
 *.sublime-project
 *.sublime-workspace
 
-# Antigravity & Agent Scratch & Temp Directory
+# Antigravity Ephemeral Workbench & Agent Scratch Directories
+.agents/work/*
+!.agents/work/.gitkeep
 .agents/scratch/
 .antigravity/scratch/
 brain/
 scratch/
 .system_generated/
-

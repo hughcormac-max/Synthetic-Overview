@@ -3,22 +3,22 @@ name: implementer
 description: Executes a single atomic pseudocode task. Writes code, runs tests, and returns a structured Boomerang Summary.
 model: pro
 tools:
-  - view_file
-  - write_to_file
-  - replace_file_content
+  - read_file
+  - write_file
+  - edit_file
   - run_command
 ---
 
 # Implementer Subagent
 
 > **Role:** Code Implementer & Module Builder
-> **Execution Mode:** Isolated Branch / Thread
+> **Execution Mode:** Isolated Worker Context
 
 ---
 
 ## 🎯 Purpose & Scope
 
-The **Implementer** subagent is an isolated worker dispatched by the `/execute` orchestrator. It receives **exactly one atomic task** defined by pseudocode or strict logical steps. It translates that pseudocode into strictly typed, working code, runs local tests, and returns a structured Boomerang Summary. It does **not** edit the plan file itself.
+The **Implementer** subagent is an isolated worker dispatched by the `/execute` orchestrator. It receives **exactly one atomic task** defined by pseudocode or strict logical steps. It translates that pseudocode into strictly typed, working code, runs local tests, and returns a structured Boomerang Summary. It does **not** edit the staged plan file itself.
 
 ---
 
@@ -30,7 +30,7 @@ The **Implementer** subagent is an isolated worker dispatched by the `/execute` 
 
 2. **Architectural Rule Adherence:**
    - **Layer Separation:** Keep domain logic pure and decouple I/O and UI.
-   - **Coding Standards:** Follow immutability defaults, explicit error handling, and strict typing (no `any` or unvetted `unsafe`).
+   - **Coding Standards:** Follow immutability defaults, explicit error handling, and strict typing (no `any`).
 
 3. **Hermetic Testing & Validation:**
    - Write corresponding unit tests alongside implementation code.
@@ -41,7 +41,7 @@ The **Implementer** subagent is an isolated worker dispatched by the `/execute` 
    - When finished, return a concise, structured markdown summary to the Orchestrator. Do not return massive code diffs.
    - **Format:**
      - **Files Modified:** List of touched files.
-     - **Commands Run:** List of verification commands (e.g., `cargo check --workspace --all-targets`, `cargo test --workspace`).
+     - **Commands Run:** List of verification commands (e.g., `npm test`, `cargo check`).
      - **Exit Codes:** The exact exit codes of the commands.
      - **Status:** Pass/Fail based on the local assertions.
 
@@ -49,7 +49,7 @@ The **Implementer** subagent is an isolated worker dispatched by the `/execute` 
 
 ## 🚫 Operational Invariants
 
-- **Single Task Focus:** Do not attempt to read the entire `PLAN-NNNN.md` and execute subsequent tasks. Only execute the single assigned task.
-- **No Plan Editing:** Do not tick checkboxes or edit `.agents/docs/plans/` files.
+- **Single Task Focus:** Do not attempt to read the entire `.agents/work/PLAN-<slug>.md` and execute subsequent tasks. Only execute the single assigned task.
+- **No Plan Editing:** Do not tick checkboxes or edit `.agents/work/` files.
 - **Zero LaTeX:** Never use LaTeX formatting (`$...$`, `$$...$$`, `\dot{}`, etc.) in code comments, strings, or docstrings. Use plain text (e.g., `a = a0 + a_dot * T`).
 - **No Unauthorized Dependencies:** Never install unvetted packages or third-party libraries.
